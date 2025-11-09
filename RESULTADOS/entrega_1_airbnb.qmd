@@ -1,0 +1,44 @@
+---
+title: "Multivariate Analysis: Primer entregable"
+author: "Marc Pastor - datexbio"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    self_contained: true
+    keep_md: false
+    css: styles.css
+format:
+  html:
+    toc: true
+    toc-title: "Table of Contents"
+    toc-depth: 3  # Controls heading levels (e.g., H1, H2, H3)
+    toc-location: left  # You can also use "right"
+    number-sections: false  # Adds numbering to headings
+    smooth-scroll: true
+  docx: default
+  pdf:
+    documentclass: article
+    toc: true
+    number-sections: true
+    keep-tex: false
+    fig-width: 6
+    fig-height: 4
+    fontsize: 9pt
+    geometry: margin=1in
+    pdf-engine: xelatex
+    include-in-header: preamble.tex
+    df-print: default
+---
+
+```{r setup, include = FALSE, warning = FALSE, message = FALSE}
+knitr::opts_chunk$set(
+  warning = FALSE,
+  message = FALSE
+)
+```
+
+```{r}
+## Cargar aquí librerías y datos (mismos que en el script correspondiente)
+load("data_entrega1.RData")
+```
+
