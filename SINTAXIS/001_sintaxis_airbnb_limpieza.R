@@ -88,6 +88,7 @@ data_airbnb <- inner_join(data_airbnb,
                          by = "id") %>%
         select(-amenities, -amenities_clean, -amenities_list)
 
+## Quitamos todas las filas con algún missing.
 data_airbnb <- data_airbnb[complete.cases(data_airbnb), ]
 
 
