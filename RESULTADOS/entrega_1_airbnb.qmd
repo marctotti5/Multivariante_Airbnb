@@ -39,6 +39,6 @@ knitr::opts_chunk$set(
 
 ```{r}
 ## Cargar aquí librerías y datos (mismos que en el script correspondiente)
-load("data_entrega1.RData")
+#load("data_entrega1.RData")
 ```
 
