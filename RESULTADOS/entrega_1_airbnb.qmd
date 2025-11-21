@@ -9,11 +9,12 @@ output:
     css: styles.css
 format:
   html:
+    theme: darkly
     toc: true
     toc-title: "Table of Contents"
-    toc-depth: 3  # Controls heading levels (e.g., H1, H2, H3)
-    toc-location: left  # You can also use "right"
-    number-sections: false  # Adds numbering to headings
+    toc-depth: 3 # Controls heading levels (e.g., H1, H2, H3)
+    toc-location: left # You can also use "right"
+    number-sections: false # Adds numbering to headings
     smooth-scroll: true
   docx: default
   pdf:
@@ -32,13 +33,237 @@ format:
 
 ```{r setup, include = FALSE, warning = FALSE, message = FALSE}
 knitr::opts_chunk$set(
-  warning = FALSE,
-  message = FALSE
+    warning = FALSE,
+    message = FALSE,
+    echo = FALSE
 )
 ```
 
 ```{r}
 ## Cargar aquí librerías y datos (mismos que en el script correspondiente)
-#load("data_entrega1.RData")
+load("../BBDD/resultados_airbnb.RData")
+library(tidyverse)
+library(DataExplorer)
+library(gtsummary)
+library(gt)
+library(gridExtra)
 ```
 
+## Preprocessing
+
+For this assignment we have decided to work with data from the [Inside Airbnb](https://insideairbnb.com/) database.
+It was created originally by the activist Murray Cox in 2015 to show the impact of Airbnb in local communities, but nowadays it serves as a database for Airbnb in many cities in the world.
+Among them, we have selected Madrid, since it is a familiar place to all of the components of the group.
+Information was lastly updated on September the 14<sup>th</sup> 2025, so it is quite up to date.
+
+The data "as is" contains 25000 observations of 79 variables, including categorical, quantitative, and binary data.
+Moreover, one of the variables (called `amenities`), holds a list of amenities available in the rental unit (such as WiFi, elevator, kitchen, etc.), which can be thought as binary variables as well (the rental uint has this amenity or not).
+The assignment required to use around 10-15 variables and around 100-1000 observations, so we have decided to:
+
+1. Remove variables with high presence of NA values.
+1. Remove every row containing any NA value (since we have so many there are enough left).
+1. Decompose the `amenities` variable into binary columns.
+1. Select the most interesting variables out of the remaining (so we can end up close to 15).
+1. Sample the remaining observations until we keep 1000 of them.
+
+After selection, we remain with 15 variables, which can be seen in @tbl-variables.
+
+| Variable                       | Type         | Description                                                           |
+| :----------------------------- | :----------- | :-------------------------------------------------------------------- |
+| `accommodates`                 | Quantitative | The maximum capacity of the listing                                   |
+| `air_conditioning`             | Binary       | Is there an air conditioning in the lisitng?                          |
+| `bathrooms`                    | Quantitative | The number of bathrooms in the listing                                |
+| `bedrooms`                     | Quantitative | The number of bedrooms                                                |
+| `elevator`                     | Binary       | Is there an elevator in the lisitng?                                  |
+| `estimated_occupancy_l365d`    | Quantitative | Estimated number of days that the listing will be rented per year     |
+| `heating`                      | Binary       | Is there a heating system in the listing?                             |
+| `host_age_years`               | Quantitative | Time (in years) that the owner of the listing has been with Airbnb    |
+| `host_total_listings_count`    | Quantitative | The number of listings the host has (per Airbnb unknown calculations) |
+| `minimum_nights`               | Quantitative | Minimum number of night stay for the listing                          |
+| `neighbourhood_group_cleansed` | Categorical  | The neighbourhood group as defined by public digital shapefiles       |
+| `number_of_reviews`            | Quantitative | The number of reviews the listing has                                 |
+| `price`                        | Quantitative | Daily price in local currency                                         |
+| `review_scores_value`          | Quantitative | Averge of the reviews of the listing                                  |
+| `room_type`                    | Categorical  | { Entire place, Private room, Shared room, Entire place }             |
+
+: Selected variables from the data set: 10 quantitative variables, 3 binary, and 2 multiclass categorical. {#tbl-variables}
+
+### Selection criteria
+
+#### Missing variables
+
+Variables with a high percentage of missing values can be safely discarded.
+Let us take a look at the following plot.
+
+```{r}
+missing
+```
+
+We can see that the `calendar_updated` variable is almost entirely missing, so we discard it.
+Among the remaining variables with missing values, we can see that the worst case has around 25% values missing.
+If rows with missing variables do not match between them (in other words, if they are disjointed sets) we could run into trouble by discarding rows with any NA.
+
+A better approach than removing the rows blindly is perhaps to first choose the variables we want to keep, which will minimize the possibility of finding one.
+In order to do so, we first need to decompose the `amenities`, as we see in the following section.
+
+#### Frequent amenities
+
+Among the possible amenities we have basic commodities that the listing is expected to have, such as WiFi or a kitchen, and others that are additions with less relevance, such as a dryer or a dedicated workspace.
+It is clear that the latter will have little impact on customers' decisions, whereas the former have a huge impact on the listing if they are missing.
+The criterion we have followed to select the amenities is to keep those that appear in more than 10% of the data.
+
+Here below we show the list of amenities that survived the filter.
+
+- `bed_linens`
+- `cooking_basics`
+- `wifi`
+- `microwave`
+- `coffee_maker`
+- `air_conditioning`
+- `kitchen`
+- `refrigerator`
+- `tv`
+- `heating`
+- `elevator`
+- `oven`
+- `washer`
+- `pets_allowed`
+- `dedicated_workspace`
+- `dryer`
+- `paid_parking_off_premises`
+- `freezer`
+- `dishwasher`
+- `free_street_parking`
+
+These are 20 new variables to consider with binary values (representing if it is present in the listing or not).
+
+#### Selecting interesting variables
+
+Since the number of variables still present in the data was too big (98), we decided to keep those that seemed the most interesting and relevant. We have already seen in @tbl-variables the ones we chose, where we tried to respect the original requirement of having at least two binary variables, two multiclass categoricals, and six quantitatives.
+
+#### Removing rows with NA {#sec-removing-rows}
+
+Once we have our variables selected, we remove the rows with any missing values, which reduces the number of them from 25000 to `r nrow(data_airbnb)` (a `r nrow(data_airbnb)/25000 * 100`% reduction).
+
+#### Sampling the remaining rows
+
+For the remaining rows, we wanted to make sure not to bias the sample by choosing to many samples from a single neighborhood, since the `Centro` neighborhood constitutes half of the data (6704 rows out of the $\sim$15000 remaining).
+To this end, we sample by maintaining the original proportion of listings per neighborhood.
+In the end, we remain with 1000 variables following said directive.
+Let us take a look at what we currently have in our data frame by using an univariate table.
+
+```{r}
+univariate_table
+```
+
+- Neighbourhood representation is preserved.
+  The most important one is 'Centro', as we were mentioning before, with a representation of 45%.
+- The most common type of listing is an entire apartment (75%), followed by a private room in someone's house (24%).
+- Listings typically have only one bedroom (62%), and sometimes two (23%).
+- The average `price` of listings per night is 112 €, and the average occupation per year is 96 days.
+
+Let us take a look now to the quantitative data by using histograms.
+Among the available, we have chosen to take a look into the following ones.
+
+```{r}
+grid.arrange(grobs = list_histograms)
+```
+
+- Interestingly, we see that the bathrooms variable is not an integer but continuous.
+  The reasonable explanation for this is that toilets (without a shower) are considered "half bathrooms".
+  We can see, nevertheless, that listings typically have only one bathroom, sometimes two, and less frequently "one and a half".
+- The price histogram is right-skewed because of some high-priced outliers.
+  Average price, as we saw in the univariate table, is 112 € per night, with a standard deviation of $\pm 91.25$, which checks with what can be seen in the histogram.
+- The review scores are left-skewed, which is to be expected.
+  This types of situation arise frequently in review systems, since value `4` is considered as a good experience instead of 3 as naively we could think.
+  The latter is usually considered as a "bad review".
+- The number of years hosts have been with Airbnb does not follow a specific trend.
+  Moreover, data is distributed along the 0-15 years, with the latter having slightly less representation.
+
+A very reasonable question to have is if the accommodates affects the price, as one could expect.
+In the following scatter plot we can see that this is the case.
+
+```{r}
+plot_accomodates_price
+```
+
+We can see that the tendency for prices is to increase more aggressively for entire apartments than for private rooms.
+Shared rooms, on the other hand, do not increase the price by the number of accommodates, most likely because there may be many beds in a single room, so there is little difference in having more or less accommodates.
+The following plot shows, moreover, that shared rooms are rare among the listings, dominated by entire apartments.
+
+```{r}
+bplot
+```
+
+In fact, we can use a crosstab-heatmap to show just how clustered is the data around the city center, which is why we decided to respect the original proportions of listings per neighborhood.
+
+```{r}
+crosstab
+```
+
+Note, as well, that more than 33% of the data comes from entire apartments in just the city center of Madrid.
+Let us be now more specific about the distribution of prices based on the type of listing.
+The following boxplot shows it.
+
+```{r}
+boxplot_room_type_price
+```
+
+In general, entire apartments are more expensive than private rooms, most likely due to the privacy they provide.
+We can see as well that less clustering is present in the entire apartment class, with several outliers costing more than double or triple the average price.
+This effect is less exaggerated in the private room category.
+
+Let us explore a different variable now, such as the number of bathrooms.
+Is there any tendency in the price according to them?
+
+```{r}
+plot_bathrooms_price
+```
+
+We can see that the data is clustered between 1.5 and 2.5 bathrooms, with no clear tendency.
+Perhaps it is worth taking a look to the distribution of bathrooms based on the number of accommodates of the listing.
+
+```{r}
+plot_bathrooms_accommodates
+```
+
+We can see that there is a trend, the number of bathrooms increases with the number of accommodates.
+Interestingly, we can see some unexpected outliers, such as one apartment in Chamberí with 8 bathrooms for a single accommodate.
+This is likely an error when inputting the data.
+We retained this outlier to demonstrate the robustness of PCA later, though we could as well choose to remove it.
+
+For the sake of completion, we show below the distribution of the rest of the amenities.
+
+```{r}
+grafico_amenities
+```
+
+It is interesting to note that around 40% of the listings do not have a heating system, and 40% as well do not have air conditioning.
+As well, note than more than half of the listings do not posses elevator.
+The high density of listings in the city center could be an explanation for this, since old buildings are less likely to have elevator.
+
+The last plot of this section shows a summary of what we have been presenting.
+
+```{r}
+ggpairs_plot
+```
+
+## Correlation analysis
+
+Let us take a look to a correlation matrix to see if there is any between the variables.
+
+```{r}
+correlation_plot
+```
+
+We can see that the price, the number of bathrooms, and the accommodates are highly correlated (the last two we had already seen it in the previous section).
+We can see as well that the occupation per year rate is correlated to number of reviews, which is to be expected.
+
+Lastly, we present a detailed map of the occupation per neighborhood, as well as the average and median price for each of them.
+
+```{r}
+# mapa_distritos_precio
+```
+
+We see that the most expensive district, on average, is Moncloa, followed by Centro and then by Salamanca.
+However, we can see as well that in Moncloa the median is somewhat far from the mean, suggesting there might be some notable outliers that are inflating the average.
