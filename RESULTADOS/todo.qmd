@@ -299,7 +299,7 @@ However, we can see as well that in Moncloa the median is somewhat far from the 
 
 ## Principal Component Analysis
 
-The final part of our task we compute a Principal Component Analysis (PCA) to our dataset. The main goal of the PCA is to reduce the dimensionality of our dataset while being able to mantain the core information of it.
+The final part of our task we compute a Principal Component Analysis (PCA) to our dataset. The main goal of the PCA is to reduce the dimensionality of our dataset while being able to maintain the core information of it.
 
 ### PCA analysis
 
@@ -307,7 +307,7 @@ In @fig-screeplot-eigen, we see a Cattell's scree graph which represents the val
 
 ```{r}
 #| label: fig-screeplot-eigen
-#| fig-cap: "Correlation plot of variables against each other."
+#| fig-cap: "Screeplot of eigenvalues."
 plot(pca_screeplot_eigenvalues)
 ```
 
@@ -317,7 +317,7 @@ We can observe that we select three components which account for 57.5% of variab
 
 ```{r}
 #| label: fig-screeplot-var
-#| fig-cap: "Correlation plot of variables against each other."
+#| fig-cap: "Screeplot of variance."
 plot(pca_screeplot_variance)
 ```
 
@@ -327,31 +327,31 @@ In this section we provide correlation plots between the three components with r
 
 #### Correlation plots between PC1 and PC2
 
-@pca-correlation12 corresponds to the correlation plot between PC1 and PC2. We notice two groups of numeric variables that are positively highly correlated, one with PC1 and other with PC2, except two variable; the minimum nights and the host total listing counts.
+@pca-correlation12 corresponds to the correlation plot between PC1 and PC2 and original variables. We notice two groups of numeric variables that are positively highly correlated, one with PC1 and other with PC2, except two variables; the minimum nights and the host total listing counts.
 
 ```{r}
 #| label: fig-pca-correlation12
-#| fig-cap: "Correlation plot of variables against each other."
+#| fig-cap: "Correlation plot between PC1 and PC2 and original variables."
 plot(pca_correlation_dimensions_1_2)
 ```
 
 #### Correlation plots between PC1 and PC3
 
-@fig-pca-correlation13 corresponds to the correlation plot between PC1 and PC3. We observe two groups of numeric variables that are positively highly correlated, one with PC1 and other with PC3, except the variable review scores value which has a little negative correlation with PC3.
+@fig-pca-correlation13 corresponds to the correlation plot between PC1 and PC3 and original variables. We observe two groups of numeric variables that are positively highly correlated, one with PC1 and other with PC3, except the variable review scores value which has a little negative correlation with PC3.
 
 ```{r}
 #| label: fig-pca-correlation13
-#| fig-cap: "Correlation plot of variables against each other."
+#| fig-cap: "Correlation plot between PC1 and PC3 and original variables."
 plot(pca_correlation_dimensions_1_3)
 ```
 
 #### Correlation plots between PC2 and PC3.
 
-@fig-pca-correlation23 corresponds to the correlation plot between PC2 and PC3. We observe that, in this case, the correlation values of the numeric variables are more spread and only one variable which is minimum nights is highly correlated with PC3.
+@fig-pca-correlation23 corresponds to the correlation plot between PC2 and PC3 and original variables. We observe that, in this case, the correlation values of the numeric variables are more spread and only one variable which is minimum nights is highly correlated with PC3.
 
 ```{r}
 #| label: fig-pca-correlation23
-#| fig-cap: "Correlation plot of variables against each other."
+#| fig-cap: "Correlation plot between PC2 and PC3 and original variables."
 plot(pca_correlation_dimensions_2_3)
 ```
 
@@ -365,7 +365,7 @@ In our first plot (@fig-pca-contribution-1) we get to see how each original nume
 
 ```{r}
 #| label: fig-pca-contribution-1
-#| fig-cap: "Correlation plot of variables against each other."
+#| fig-cap: "Contribution plot of original variables to PC1."
 plot(pca_contribution_dim1)
 ```
 
@@ -375,7 +375,7 @@ In our second (@fig-pca-contribution-2) plot we get to see how each original num
 
 ```{r}
 #| label: fig-pca-contribution-2
-#| fig-cap: "Correlation plot of variables against each other."
+#| fig-cap: "Contribution plot of original variables to PC2."
 plot(pca_contribution_dim2)
 ```
 
@@ -385,7 +385,7 @@ In our third plot (@fig-pca-contribution-3) we get to see how each original nume
 
 ```{r}
 #| label: fig-pca-contribution-3
-#| fig-cap: "Correlation plot of variables against each other."
+#| fig-cap: "Contribution plot of original variables to PC3."
 plot(pca_contribution_dim3)
 ```
 
@@ -396,7 +396,7 @@ The results, which can be seen in @fig-heatmap, justifies the previous contribut
 
 ```{r}
 #| label: fig-heatmap
-#| fig-cap: "Correlation plot of variables against each other."
+#| fig-cap: "Correlation heatmap."
 pheatmap(
   cor_matrix_pca,
   cluster_rows = FALSE,
@@ -412,7 +412,7 @@ As an example of an individual plot (@fig-individual), we have our PCA grouped b
 
 ```{r}
 #| label: fig-individual
-#| fig-cap: "Correlation plot of variables against each other."
+#| fig-cap: "Individual plot of our PCA grouped by neighborhoods."
 plot(pca_individuals_neighbourhood)
 ```
 
@@ -420,38 +420,35 @@ plot(pca_individuals_neighbourhood)
 
 In the final part of our project we compute a stability analysis for our PCA by bootstrap.
 The following graph corresponds to the stability analysis of our eigenvalues.
-Recall as we saw before that the only principal components which fulfiled Kaiser's criterion were PC1, PC2 and PC3, in this graph we observe that the criterion is still fulfilled.
+Recall as we saw before that the only principal components which fulfilled Kaiser's criterion were PC1, PC2 and PC3, in this graph we observe that the criterion is still fulfilled.
 Our three PCs show to be stable in @fig-eigenvalues-stability.
 
 ```{r}
 #| label: fig-eigenvalues-stability
-#| fig-cap: "Correlation plot of variables against each other."
+#| fig-cap: "Stability of eigenvalues plot."
 plot(plot_eigenvalues_stability)
 ```
 
 In the final part of our analysis we check the stability of our corresponding principal components.
-We can see that the original numerical variables exhibit a clear pattern with the principal component which is shown by the low variablity and the directional agreetment between the bootstrap estimates and the original loadings.
+We can see that the original numerical variables exhibit a clear pattern with the principal component which is shown by the low variability and the directional agreement between the bootstrap estimates and the original loadings.
 
-#### Stability analysis of PC1
 
 ```{r}
 #| label: fig-eigenvalues-stability-pc1
-#| fig-cap: "Correlation plot of variables against each other."
+#| fig-cap: "Stability of PC1 loadings plot."
 plot(plot_loadings_pc1_stability)
 ```
 
-#### Stability analysis of PC2
 
 ```{r}
 #| label: fig-eigenvalues-stability-pc2
-#| fig-cap: "Correlation plot of variables against each other."
+#| fig-cap: "Stability of PC2 loadings plot."
 plot(plot_loadings_pc2_stability)
 ```
 
-#### Stability analysis of PC3
 
 ```{r}
 #| label: fig-eigenvalues-stability-pc3
-#| fig-cap: "Correlation plot of variables against each other."
+#| fig-cap: "Stability of PC3 loadings plot"
 plot(plot_loadings_pc3_stability)
 ```
