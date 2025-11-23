@@ -10,7 +10,6 @@ output:
     css: styles.css
 format:
   html:
-    theme: darkly
     toc: true
     toc-title: "Table of Contents"
     toc-depth: 3 # Controls heading levels (e.g., H1, H2, H3)
@@ -70,14 +69,14 @@ Airbnb](https://insideairbnb.com/) database. It was created originally by the
 activist Murray Cox in 2015 to show the impact of Airbnb in local communities,
 but nowadays it serves as a database for Airbnb in many cities in the world.
 Among them, we have selected Madrid, since it is a familiar place to all of the
-components of the group. Information was lastly updated on September the
+components of the group. Information was last updated on September the
 14<sup>th</sup> 2025, so it is quite up to date.
 
 The data "as is" contains 25000 observations of 79 variables, including
 categorical, quantitative, and binary data. Moreover, one of the variables
 (called `amenities`), holds a list of amenities available in the rental unit
 (such as WiFi, elevator, kitchen, etc.), which can be thought as binary
-variables as well (the rental uint has this amenity or not). The assignment
+variables as well (the rental unit has this amenity or not). The assignment
 required to use around 10-15 variables and around 100-1000 observations, so we
 have decided to:
 
@@ -94,19 +93,19 @@ After selection, we remain with 15 variables, which can be seen in @tbl-variable
 | Variable                       | Type         | Description                                                           |
 | :----------------------------- | :----------- | :-------------------------------------------------------------------- |
 | `accommodates`                 | Quantitative | The maximum capacity of the listing                                   |
-| `air_conditioning`             | Binary       | Is there an air conditioning in the lisitng?                          |
+| `air_conditioning`             | Binary       | Is there an air conditioning in the listing?                          |
 | `bathrooms`                    | Quantitative | The number of bathrooms in the listing                                |
 | `bedrooms`                     | Quantitative | The number of bedrooms                                                |
-| `elevator`                     | Binary       | Is there an elevator in the lisitng?                                  |
+| `elevator`                     | Binary       | Is there an elevator in the listing?                                  |
 | `estimated_occupancy_l365d`    | Quantitative | Estimated number of days that the listing will be rented per year     |
 | `heating`                      | Binary       | Is there a heating system in the listing?                             |
 | `host_age_years`               | Quantitative | Time (in years) that the owner of the listing has been with Airbnb    |
 | `host_total_listings_count`    | Quantitative | The number of listings the host has (per Airbnb unknown calculations) |
 | `minimum_nights`               | Quantitative | Minimum number of night stay for the listing                          |
-| `neighbourhood_group_cleansed` | Categorical  | The neighbourhood group as defined by public digital shapefiles       |
+| `neighborhood_group_cleansed` | Categorical  | The neighborhood group as defined by public digital shapefiles       |
 | `number_of_reviews`            | Quantitative | The number of reviews the listing has                                 |
 | `price`                        | Quantitative | Daily price in local currency                                         |
-| `review_scores_value`          | Quantitative | Averge of the reviews of the listing                                  |
+| `review_scores_value`          | Quantitative | Average of the reviews of the listing                                  |
 | `room_type`                    | Categorical  | { Entire place, Private room, Shared room, Entire place }             |
 
 : Selected variables from the data set: 10 quantitative variables, 3 binary, and 2 multiclass categorical. {#tbl-variables}
@@ -126,7 +125,7 @@ missing
 
 We can see that the `calendar_updated` variable is almost entirely missing, so we discard it.
 Among the remaining variables with missing values, we can see that the worst case has around 25% values missing.
-If rows with missing variables do not match between them (in other words, if they are disjointed sets) we could run into trouble by discarding rows with any NA.
+If rows with missing variables do not match between them (in other words, if they are disjoint sets) we could run into trouble by discarding rows with any NA.
 
 A better approach than removing the rows blindly is perhaps to first choose the variables we want to keep, which will minimize the possibility of finding one.
 In order to do so, we first need to decompose the `amenities`, as we see in the following section.
@@ -148,7 +147,7 @@ Once we have our variables selected, we remove the rows with any missing values,
 
 #### Sampling the remaining rows
 
-For the remaining rows, we wanted to make sure not to bias the sample by choosing to many samples from a single neighborhood, since the `Centro` neighborhood constitutes half of the data (6704 rows out of the $\sim$15000 remaining).
+For the remaining rows, we wanted to make sure not to bias the sample by choosing too many samples from a single neighborhood, since the `Centro` neighborhood constitutes half of the data (6704 rows out of the $\sim$15000 remaining).
 To this end, we sample by maintaining the original proportion of listings per neighborhood.
 In the end, we remain with 1000 variables following said directive.
 
@@ -161,7 +160,7 @@ univariate_table
 Some comments about the remaining variables:
 
 - Neighbourhood representation is preserved.
-  The most important one is 'Centro', as we were mentioning before, with a representation of 45%.
+  The most important one is 'Centro', as we mentioned before, with a representation of 45%.
 - The most common type of listing is an entire apartment (75%), followed by a private room in someone's house (24%).
 - Listings typically have only one bedroom (62%), and sometimes two (23%).
 - The average `price` of listings per night is 112 €, and the average occupation per year is 96 days.
@@ -169,7 +168,7 @@ Some comments about the remaining variables:
 ## Data exploration
 
 Let us take a look now to the quantitative data by using histograms.
-Among the available, we have chosen to take a look into those showed in @fig-histograms.
+Among the available, we have chosen to take a look into those shown in @fig-histograms.
 
 ```{r}
 #| label: fig-histograms
@@ -183,7 +182,7 @@ grid.arrange(grobs = list_histograms)
 - The price histogram is right-skewed because of some high-priced outliers.
   Average price, as we saw in the univariate table, is 112 € per night, with a standard deviation of $\pm 91.25$, which checks with what can be seen in the histogram.
 - The review scores are left-skewed, which is to be expected.
-  This types of situation arise frequently in review systems, since value `4` is considered as a good experience instead of 3 as naively we could think.
+  These types of situations arise frequently in review systems, since value `4` is considered as a good experience instead of 3 as we might naively think.
   The latter is usually considered as a "bad review".
 - The number of years hosts have been with Airbnb does not follow a specific trend.
   Moreover, data is distributed along the 0-15 years, with the latter having slightly less representation.
@@ -212,7 +211,7 @@ In fact, we can use a crosstab-heatmap to show just how clustered is the data ar
 
 ```{r}
 #| label: fig-crosstab
-#| fig-cap: "A crosstab of the type of listing per type and per neighbourhood."
+#| fig-cap: "A crosstab of the type of listing per type and per neighborhood."
 crosstab
 ```
 
@@ -228,7 +227,7 @@ boxplot_room_type_price
 
 In general, entire apartments are more expensive than private rooms, most likely due to the privacy they provide.
 We can see as well that less clustering is present in the entire apartment class, with several outliers costing more than double or triple the average price.
-This effect is less exaggerated in the private room category.
+This variance is less pronounced in the private room category.
 
 Let us explore a different variable now, such as the number of bathrooms.
 Is there any tendency in the price according to them?
@@ -264,7 +263,7 @@ grafico_amenities
 ```
 
 It is interesting to note that around 40% of the listings do not have a heating system, and 40% as well do not have air conditioning.
-As well, note than more than half of the listings do not posses elevator.
+As well, note than more than half of the listings do not posses an elevator.
 The high density of listings in the city center could be an explanation for this, since old buildings are less likely to have elevator.
 
 The last plot of this section, @fig-ggpairs, shows a summary of what we have been presenting.
@@ -288,18 +287,21 @@ correlation_plot
 We can see in @fig-corrplot that the price, the number of bathrooms, and the accommodates are highly correlated (the last two we had already seen it in the previous section).
 We can see as well that the occupation per year rate is correlated to number of reviews, which is to be expected.
 
-<!-- Lastly, we present a detailed map of the occupation per neighborhood, as well as the average and median price for each of them. -->
+Lastly, we present in @fig-map a detailed map of the occupation per neighborhood, as well as the average and median price for each of them.
+
+![A heat map of the listing prices in Madrid grouped by neighborhood.](map.png){#fig-map}
 
 ```{r}
 # mapa_distritos_precio
 ```
 
-We see that the most expensive district, on average, is Moncloa, followed by Centro and then by Salamanca.
-However, we can see as well that in Moncloa the median is somewhat far from the mean, suggesting there might be some notable outliers that are inflating the average.
+Unfortunately, @fig-map is not interactive in its PDF version, which makes the information not as visual as it could be.
+Nevertheless, we see that the most expensive district, is Moncloa, followed by Centro and then by Salamanca.
+However, in Moncloa the median is somewhat far from the mean, suggesting there might be some notable outliers that are inflating the average.
 
 ## Principal Component Analysis
 
-The final part of our task we compute a Principal Component Analysis (PCA) to our dataset. The main goal of the PCA is to reduce the dimensionality of our dataset while being able to maintain the core information of it.
+In the final part of our task, we compute a Principal Component Analysis (PCA) to our dataset. The main goal of the PCA is to reduce the dimensionality of our dataset while being able to maintain its core information.
 
 ### PCA analysis
 
@@ -327,7 +329,7 @@ In this section we provide correlation plots between the three components with r
 
 #### Correlation plots between PC1 and PC2
 
-@pca-correlation12 corresponds to the correlation plot between PC1 and PC2 and original variables. We notice two groups of numeric variables that are positively highly correlated, one with PC1 and other with PC2, except two variables; the minimum nights and the host total listing counts.
+@fig-pca-correlation12 corresponds to the correlation plot between PC1 and PC2 and original variables. We notice two groups of numeric variables that are positively highly correlated, one with PC1 and other with PC2, except two variables; the minimum nights and the host total listing counts.
 
 ```{r}
 #| label: fig-pca-correlation12
@@ -357,11 +359,11 @@ plot(pca_correlation_dimensions_2_3)
 
 ### Contribution plots
 
-Other way we have to observe how much each original numeric variable contributes to each one of our principal components and whether it contributes positively or negatively is the contribution plot.
+Another way we have to observe how much each original numeric variable contributes to each one of our principal components and whether it contributes positively or negatively is the contribution plot.
 
 #### Contribution plot PC1
 
-In our first plot (@fig-pca-contribution-1) we get to see how each original numeric variable contributes to the PC1. We observe that the ones who contribute the most are accommodates, bedrooms, bathrooms and price which makes sense because more people imply more bedrooms and bathrooms and bigger properties imply more price, so it makes sense that these variables are highly correlated between each other and are part of PC2.
+In our first plot (@fig-pca-contribution-1) we get to see how each original numeric variable contributes to the PC1. We observe that the ones that contribute the most are accommodates, bedrooms, bathrooms and price which makes sense because more people imply more bedrooms and bathrooms and bigger properties imply more price, so it makes sense that these variables are highly correlated between each other and are part of PC2.
 
 ```{r}
 #| label: fig-pca-contribution-1
@@ -381,7 +383,7 @@ plot(pca_contribution_dim2)
 
 #### Contribution plot PC3
 
-In our third plot (@fig-pca-contribution-3) we get to see how each original numeric variable contributes to the PC3. There is one variable that contributes exponentially more than any other is the minimum nights variables which contributes more than 50% of the PC3. Recall that in the correlation plot of the PC1 and PC3 and PC2 and PC3, we observed that these variable was the one who had the biggest correlation with PC3 so this makes sense.
+In our third plot (@fig-pca-contribution-3) we get to see how each original numeric variable contributes to the PC3. There is one variable that contributes significantly more than any other is the minimum nights variables which contributes more than 50% of the PC3. Recall that in the correlation plot of the PC1 and PC3 and PC2 and PC3, we observed that these variable was the one that had the biggest correlation with PC3 so this makes sense.
 
 ```{r}
 #| label: fig-pca-contribution-3
@@ -391,7 +393,7 @@ plot(pca_contribution_dim3)
 
 #### Correlation heatmap
 
-Finally we plot a correlation heatmap which allow us to see the level of correlation of the original numeric variables with each one of the principal components.
+Finally we plot a correlation heatmap which allows us to see the level of correlation of the original numeric variables with each one of the principal components.
 The results, which can be seen in @fig-heatmap, justifies the previous contribution and correlation plots which we have explained before.
 
 ```{r}
