@@ -678,335 +678,335 @@ mapa_distritos_precio <- leaflet(distritos_madrid) %>%
 ## --------------------------------------------------- PCA --------------------------------------------------
 ## ----------------------------------------------------------------------------------------------------------
 
-## Análisis PCA
-# variables_PCA <- data_airbnb_sample %>%
-#         select_if(is.numeric) %>%
-#         select(-latitude, -longitude) %>%
-#         colnames()
+# Análisis PCA
+variables_PCA <- data_airbnb_sample %>%
+  select_if(is.numeric) %>%
+  select(-latitude, -longitude) %>%
+  colnames()
 
-# pca_object <- PCA(
-#         data_airbnb_sample[, variables_PCA],
-#         scale.unit = TRUE,
-#         ncp = 5,
-#         graph = F
-# )
+pca_object <- PCA(
+  data_airbnb_sample[, variables_PCA],
+  scale.unit = TRUE,
+  ncp = 5,
+  graph = F
+)
 
-# ## Screeplots: seleccionamos 3 componentes principales siguiendo el criterio de Kaiser (todos los autovalores > 1)
-# pca_screeplot_eigenvalues <- fviz_screeplot(
-#         pca_object,
-#         addlabels = T,
-#         choice = "eigenvalue"
-# ) +
-#         geom_abline(
-#                 intercept = 1,
-#                 slope = 0,
-#                 colour = "red",
-#                 linetype = "dashed",
-#                 linewidth = 0.5
-#         ) +
-#         annotate(
-#                 "text",
-#                 x = Inf,
-#                 y = 1,
-#                 label = "Kaiser's criterion",
-#                 hjust = 1.05,
-#                 vjust = -0.5,
-#                 color = "red",
-#                 size = 3.5
-#         ) +
-#         geom_abline(
-#                 intercept = 0.7,
-#                 slope = 0,
-#                 colour = "orange",
-#                 linetype = "dotted",
-#                 linewidth = 0.5
-#         ) +
-#         annotate(
-#                 "text",
-#                 x = Inf,
-#                 y = 0.7,
-#                 label = "Jollife's criterion",
-#                 hjust = 1.05,
-#                 vjust = -0.5,
-#                 color = "orange",
-#                 size = 3.5
-#         )
+## Screeplots: seleccionamos 3 componentes principales siguiendo el criterio de Kaiser (todos los autovalores > 1)
+pca_screeplot_eigenvalues <- fviz_screeplot(
+  pca_object,
+  addlabels = T,
+  choice = "eigenvalue"
+) +
+  geom_abline(
+    intercept = 1,
+    slope = 0,
+    colour = "red",
+    linetype = "dashed",
+    linewidth = 0.5
+  ) +
+  annotate(
+    "text",
+    x = Inf,
+    y = 1,
+    label = "Kaiser's criterion",
+    hjust = 1.05,
+    vjust = -0.5,
+    color = "red",
+    size = 3.5
+  ) +
+  geom_abline(
+    intercept = 0.7,
+    slope = 0,
+    colour = "orange",
+    linetype = "dotted",
+    linewidth = 0.5
+  ) +
+  annotate(
+    "text",
+    x = Inf,
+    y = 0.7,
+    label = "Jollife's criterion",
+    hjust = 1.05,
+    vjust = -0.5,
+    color = "orange",
+    size = 3.5
+  )
 
-# pca_screeplot_variance <- fviz_screeplot(
-#         pca_object,
-#         addlabels = T,
-#         choice = "variance"
-# )
+pca_screeplot_variance <- fviz_screeplot(
+  pca_object,
+  addlabels = T,
+  choice = "variance"
+)
 
-# ## Correlation plots between PC's and original variables
-# pca_correlation_dimensions_1_2 <- fviz_pca_var(
-#         pca_object,
-#         axes = c(1, 2)
-# )
+## Correlation plots between PC's and original variables
+pca_correlation_dimensions_1_2 <- fviz_pca_var(
+  pca_object,
+  axes = c(1, 2)
+)
 
-# pca_correlation_dimensions_1_2 <- fviz_pca_var(
-#         pca_object,
-#         axes = c(1, 2)
-# )
-# pca_correlation_dimensions_1_3 <- fviz_pca_var(
-#         pca_object,
-#         axes = c(1, 3)
-# )
-# pca_correlation_dimensions_2_3 <- fviz_pca_var(
-#         pca_object,
-#         axes = c(2, 3)
-# )
+pca_correlation_dimensions_1_2 <- fviz_pca_var(
+  pca_object,
+  axes = c(1, 2)
+)
+pca_correlation_dimensions_1_3 <- fviz_pca_var(
+  pca_object,
+  axes = c(1, 3)
+)
+pca_correlation_dimensions_2_3 <- fviz_pca_var(
+  pca_object,
+  axes = c(2, 3)
+)
 
-# ## Contribution plots
-# pca_contribution_dim1 <- fviz_contrib(
-#         pca_object,
-#         choice = "var",
-#         axes = 1,
-#         top = 10
-# )
-# pca_contribution_dim2 <- fviz_contrib(
-#         pca_object,
-#         choice = "var",
-#         axes = 2,
-#         top = 10
-# )
-# pca_contribution_dim3 <- fviz_contrib(
-#         pca_object,
-#         choice = "var",
-#         axes = 3,
-#         top = 10
-# )
+## Contribution plots
+pca_contribution_dim1 <- fviz_contrib(
+  pca_object,
+  choice = "var",
+  axes = 1,
+  top = 10
+)
+pca_contribution_dim2 <- fviz_contrib(
+  pca_object,
+  choice = "var",
+  axes = 2,
+  top = 10
+)
+pca_contribution_dim3 <- fviz_contrib(
+  pca_object,
+  choice = "var",
+  axes = 3,
+  top = 10
+)
 
-# cor_matrix_pca <- pca_object$var$coord[, 1:3]
-# rownames(cor_matrix_pca) <- unlist(var_label(data_airbnb_sample)[rownames(
-#         cor_matrix_pca
-# )])
+cor_matrix_pca <- pca_object$var$coord[, 1:3]
+rownames(cor_matrix_pca) <- unlist(var_label(data_airbnb_sample)[rownames(
+  cor_matrix_pca
+)])
 
-# heatmap_correlations_PCA_originalvariables <- pheatmap(
-#         cor_matrix_pca,
-#         cluster_rows = FALSE,
-#         cluster_cols = FALSE,
-#         display_numbers = TRUE,
-#         color = colorRampPalette(c("blue", "white", "red"))(100),
-#         main = "Correlations between original variables and PCs (1-3)",
-#         fontsize_row = 8
-# )
+heatmap_correlations_PCA_originalvariables <- pheatmap(
+  cor_matrix_pca,
+  cluster_rows = FALSE,
+  cluster_cols = FALSE,
+  display_numbers = TRUE,
+  color = colorRampPalette(c("blue", "white", "red"))(100),
+  main = "Correlations between original variables and PCs (1-3)",
+  fontsize_row = 8
+)
 
-# ## Individuals plots
-# pca_individuals_neighbourhood <- fviz_pca_ind(
-#         pca_object,
-#         label = "none",
-#         axes = c(1, 2),
-#         geom = "point",
-#         habillage = data_airbnb_sample$neighbourhood_group_cleansed,
-#         pointshape = 19
-# ) +
-#         xlim(c(-3, 5))
+## Individuals plots
+pca_individuals_neighbourhood <- fviz_pca_ind(
+  pca_object,
+  label = "none",
+  axes = c(1, 2),
+  geom = "point",
+  habillage = data_airbnb_sample$neighbourhood_group_cleansed,
+  pointshape = 19
+) +
+  xlim(c(-3, 5))
 
-# pca_individuals_roomtype <- fviz_pca_ind(
-#         pca_object,
-#         label = "none",
-#         axes = c(1, 2),
-#         geom = "point",
-#         habillage = data_airbnb_sample$room_type,
-#         addEllipses = T,
-#         pointshape = 19
-# )
+pca_individuals_roomtype <- fviz_pca_ind(
+  pca_object,
+  label = "none",
+  axes = c(1, 2),
+  geom = "point",
+  habillage = data_airbnb_sample$room_type,
+  addEllipses = T,
+  pointshape = 19
+)
 
-# pca_individuals_airconditioning <- fviz_pca_ind(
-#         pca_object,
-#         label = "none",
-#         axes = c(1, 2),
-#         geom = "point",
-#         habillage = data_airbnb_sample$air_conditioning,
-#         addEllipses = T,
-#         pointshape = 19
-# )
+pca_individuals_airconditioning <- fviz_pca_ind(
+  pca_object,
+  label = "none",
+  axes = c(1, 2),
+  geom = "point",
+  habillage = data_airbnb_sample$air_conditioning,
+  addEllipses = T,
+  pointshape = 19
+)
 
-# pca_individuals_heating <- fviz_pca_ind(
-#         pca_object,
-#         label = "none",
-#         axes = c(1, 2),
-#         geom = "point",
-#         habillage = data_airbnb_sample$heating,
-#         addEllipses = T,
-#         pointshape = 19
-# )
+pca_individuals_heating <- fviz_pca_ind(
+  pca_object,
+  label = "none",
+  axes = c(1, 2),
+  geom = "point",
+  habillage = data_airbnb_sample$heating,
+  addEllipses = T,
+  pointshape = 19
+)
 
-# pca_individuals_elevator <- fviz_pca_ind(
-#         pca_object,
-#         label = "none",
-#         axes = c(1, 2),
-#         geom = "point",
-#         habillage = data_airbnb_sample$elevator,
-#         addEllipses = T,
-#         pointshape = 19
-# )
+pca_individuals_elevator <- fviz_pca_ind(
+  pca_object,
+  label = "none",
+  axes = c(1, 2),
+  geom = "point",
+  habillage = data_airbnb_sample$elevator,
+  addEllipses = T,
+  pointshape = 19
+)
 
-# ## Estabilidad del PCA: análisis bootstrap
-# set.seed(123)
-# n_obs <- nrow(data_airbnb_sample)
-# n_bootstrap <- 10000 # Número de muestras bootstrap
+## Estabilidad del PCA: análisis bootstrap
+set.seed(123)
+n_obs <- nrow(data_airbnb_sample)
+n_bootstrap <- 10000 # Número de muestras bootstrap
 
-# ### Matrices para almacenar loadings de PC1, PC2 y PC3
-# loadings_pc1_bootstrap <- matrix(
-#         NA,
-#         nrow = n_bootstrap,
-#         ncol = length(variables_PCA)
-# )
-# loadings_pc2_bootstrap <- matrix(
-#         NA,
-#         nrow = n_bootstrap,
-#         ncol = length(variables_PCA)
-# )
-# loadings_pc3_bootstrap <- matrix(
-#         NA,
-#         nrow = n_bootstrap,
-#         ncol = length(variables_PCA)
-# )
-# colnames(loadings_pc1_bootstrap) <- variables_PCA
-# colnames(loadings_pc2_bootstrap) <- variables_PCA
-# colnames(loadings_pc3_bootstrap) <- variables_PCA
+### Matrices para almacenar loadings de PC1, PC2 y PC3
+loadings_pc1_bootstrap <- matrix(
+  NA,
+  nrow = n_bootstrap,
+  ncol = length(variables_PCA)
+)
+loadings_pc2_bootstrap <- matrix(
+  NA,
+  nrow = n_bootstrap,
+  ncol = length(variables_PCA)
+)
+loadings_pc3_bootstrap <- matrix(
+  NA,
+  nrow = n_bootstrap,
+  ncol = length(variables_PCA)
+)
+colnames(loadings_pc1_bootstrap) <- variables_PCA
+colnames(loadings_pc2_bootstrap) <- variables_PCA
+colnames(loadings_pc3_bootstrap) <- variables_PCA
 
-# ### Matriz para almacenar eigenvalues
-# eigenvalues_bootstrap <- matrix(NA, nrow = n_bootstrap, ncol = 5)
-# colnames(eigenvalues_bootstrap) <- paste0("PC", 1:5)
+### Matriz para almacenar eigenvalues
+eigenvalues_bootstrap <- matrix(NA, nrow = n_bootstrap, ncol = 5)
+colnames(eigenvalues_bootstrap) <- paste0("PC", 1:5)
 
-# ### Bootstrap: remuestreo CON reemplazo
-# for (i in 1:n_bootstrap) {
-#         # Muestra bootstrap (con reemplazo)
-#         indices_boot <- sample(1:n_obs, size = n_obs, replace = TRUE)
-#         data_bootstrap <- data_airbnb_sample[indices_boot, variables_PCA]
+### Bootstrap: remuestreo CON reemplazo
+for (i in 1:n_bootstrap) {
+  # Muestra bootstrap (con reemplazo)
+  indices_boot <- sample(1:n_obs, size = n_obs, replace = TRUE)
+  data_bootstrap <- data_airbnb_sample[indices_boot, variables_PCA]
 
-#         # PCA en la muestra bootstrap
-#         pca_boot <- PCA(
-#                 data_bootstrap,
-#                 scale.unit = TRUE,
-#                 ncp = 5,
-#                 graph = FALSE
-#         )
+  # PCA en la muestra bootstrap
+  pca_boot <- PCA(
+    data_bootstrap,
+    scale.unit = TRUE,
+    ncp = 5,
+    graph = FALSE
+  )
 
-#         # Guardar eigenvalues y loadings
-#         eigenvalues_bootstrap[i, ] <- pca_boot$eig[1:5, 1]
-#         loadings_pc1_bootstrap[i, ] <- pca_boot$var$coord[, 1]
-#         loadings_pc2_bootstrap[i, ] <- pca_boot$var$coord[, 2]
-#         loadings_pc3_bootstrap[i, ] <- pca_boot$var$coord[, 3]
-# }
+  # Guardar eigenvalues y loadings
+  eigenvalues_bootstrap[i, ] <- pca_boot$eig[1:5, 1]
+  loadings_pc1_bootstrap[i, ] <- pca_boot$var$coord[, 1]
+  loadings_pc2_bootstrap[i, ] <- pca_boot$var$coord[, 2]
+  loadings_pc3_bootstrap[i, ] <- pca_boot$var$coord[, 3]
+}
 
-# ### Gráfico de estabilidad de eigenvalues
-# eigenvalues_stability <- data.frame(
-#         PC = paste0("PC", 1:5),
-#         Original = pca_object$eig[1:5, 1],
-#         CI_lower = apply(eigenvalues_bootstrap, 2, quantile, probs = 0.025),
-#         CI_upper = apply(eigenvalues_bootstrap, 2, quantile, probs = 0.975)
-# )
+### Gráfico de estabilidad de eigenvalues
+eigenvalues_stability <- data.frame(
+  PC = paste0("PC", 1:5),
+  Original = pca_object$eig[1:5, 1],
+  CI_lower = apply(eigenvalues_bootstrap, 2, quantile, probs = 0.025),
+  CI_upper = apply(eigenvalues_bootstrap, 2, quantile, probs = 0.975)
+)
 
-# eigenvalues_bootstrap_long <- as.data.frame(eigenvalues_bootstrap) %>%
-#         pivot_longer(everything(), names_to = "PC", values_to = "Eigenvalue")
+eigenvalues_bootstrap_long <- as.data.frame(eigenvalues_bootstrap) %>%
+  pivot_longer(everything(), names_to = "PC", values_to = "Eigenvalue")
 
-# plot_eigenvalues_stability <- ggplot(
-#         eigenvalues_bootstrap_long,
-#         aes(x = PC, y = Eigenvalue)
-# ) +
-#         #geom_violin(fill = "lightblue", alpha = 0.5) +
-#         geom_boxplot(width = 0.2, fill = "white", alpha = 0.8) +
-#         geom_point(
-#                 data = eigenvalues_stability,
-#                 aes(x = PC, y = Original),
-#                 color = "red",
-#                 size = 4,
-#                 shape = 18
-#         ) +
-#         geom_errorbar(
-#                 data = eigenvalues_stability,
-#                 aes(x = PC, y = Original, ymin = CI_lower, ymax = CI_upper),
-#                 color = "darkred",
-#                 width = 0.3,
-#                 linewidth = 1
-#         ) +
-#         labs(
-#                 title = "Stability of Eigenvalues - Bootstrap Analysis",
-#                 subtitle = "Red diamonds = Original PCA; Error bars = 95% CI",
-#                 x = "Principal Component",
-#                 y = "Eigenvalue"
-#         ) +
-#         theme_minimal() +
-#         theme(
-#                 plot.title = element_text(hjust = 0.5, face = "bold"),
-#                 plot.subtitle = element_text(hjust = 0.5, size = 10)
-#         )
+plot_eigenvalues_stability <- ggplot(
+  eigenvalues_bootstrap_long,
+  aes(x = PC, y = Eigenvalue)
+) +
+  #geom_violin(fill = "lightblue", alpha = 0.5) +
+  geom_boxplot(width = 0.2, fill = "white", alpha = 0.8) +
+  geom_point(
+    data = eigenvalues_stability,
+    aes(x = PC, y = Original),
+    color = "red",
+    size = 4,
+    shape = 18
+  ) +
+  geom_errorbar(
+    data = eigenvalues_stability,
+    aes(x = PC, y = Original, ymin = CI_lower, ymax = CI_upper),
+    color = "darkred",
+    width = 0.3,
+    linewidth = 1
+  ) +
+  labs(
+    title = "Stability of Eigenvalues - Bootstrap Analysis",
+    subtitle = "Red diamonds = Original PCA; Error bars = 95% CI",
+    x = "Principal Component",
+    y = "Eigenvalue"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold"),
+    plot.subtitle = element_text(hjust = 0.5, size = 10)
+  )
 
-# ### Función para crear gráfico de estabilidad de loadings
-# create_loadings_stability_plot <- function(
-#         pc_number,
-#         original_loadings,
-#         bootstrap_loadings
-# ) {
-#         loadings_df <- data.frame(
-#                 Variable = unlist(var_label(data_airbnb_sample)[variables_PCA]),
-#                 Original = original_loadings,
-#                 Mean_Bootstrap = colMeans(bootstrap_loadings),
-#                 SD_Bootstrap = apply(bootstrap_loadings, 2, sd),
-#                 CI_lower = apply(
-#                         bootstrap_loadings,
-#                         2,
-#                         quantile,
-#                         probs = 0.025
-#                 ),
-#                 CI_upper = apply(bootstrap_loadings, 2, quantile, probs = 0.975)
-#         ) %>%
-#                 arrange(desc(abs(Original)))
+### Función para crear gráfico de estabilidad de loadings
+create_loadings_stability_plot <- function(
+  pc_number,
+  original_loadings,
+  bootstrap_loadings
+) {
+  loadings_df <- data.frame(
+    Variable = unlist(var_label(data_airbnb_sample)[variables_PCA]),
+    Original = original_loadings,
+    Mean_Bootstrap = colMeans(bootstrap_loadings),
+    SD_Bootstrap = apply(bootstrap_loadings, 2, sd),
+    CI_lower = apply(
+      bootstrap_loadings,
+      2,
+      quantile,
+      probs = 0.025
+    ),
+    CI_upper = apply(bootstrap_loadings, 2, quantile, probs = 0.975)
+  ) %>%
+    arrange(desc(abs(Original)))
 
-#         ggplot(loadings_df, aes(x = reorder(Variable, abs(Original)))) +
-#                 geom_point(aes(y = Original), color = "red", size = 3) +
-#                 geom_errorbar(
-#                         aes(ymin = CI_lower, ymax = CI_upper),
-#                         width = 0.2,
-#                         color = "blue",
-#                         alpha = 0.6,
-#                         linewidth = 1
-#                 ) +
-#                 geom_hline(
-#                         yintercept = 0,
-#                         linetype = "dashed",
-#                         color = "gray"
-#                 ) +
-#                 coord_flip() +
-#                 labs(
-#                         title = paste0(
-#                                 "Stability of PC",
-#                                 pc_number,
-#                                 " Loadings - Bootstrap"
-#                         ),
-#                         subtitle = "Red = Original; Blue bars = 95% Bootstrap CI",
-#                         x = "Variable",
-#                         y = paste0("Loading on PC", pc_number)
-#                 ) +
-#                 theme_minimal() +
-#                 theme(
-#                         plot.title = element_text(hjust = 0.5, face = "bold"),
-#                         plot.subtitle = element_text(hjust = 0.5, size = 9)
-#                 )
-# }
+  ggplot(loadings_df, aes(x = reorder(Variable, abs(Original)))) +
+    geom_point(aes(y = Original), color = "red", size = 3) +
+    geom_errorbar(
+      aes(ymin = CI_lower, ymax = CI_upper),
+      width = 0.2,
+      color = "blue",
+      alpha = 0.6,
+      linewidth = 1
+    ) +
+    geom_hline(
+      yintercept = 0,
+      linetype = "dashed",
+      color = "gray"
+    ) +
+    coord_flip() +
+    labs(
+      title = paste0(
+        "Stability of PC",
+        pc_number,
+        " Loadings - Bootstrap"
+      ),
+      subtitle = "Red = Original; Blue bars = 95% Bootstrap CI",
+      x = "Variable",
+      y = paste0("Loading on PC", pc_number)
+    ) +
+    theme_minimal() +
+    theme(
+      plot.title = element_text(hjust = 0.5, face = "bold"),
+      plot.subtitle = element_text(hjust = 0.5, size = 9)
+    )
+}
 
-# ### Crear gráficos para PC1, PC2 y PC3
-# plot_loadings_pc1_stability <- create_loadings_stability_plot(
-#         1,
-#         pca_object$var$coord[, 1],
-#         loadings_pc1_bootstrap
-# )
+### Crear gráficos para PC1, PC2 y PC3
+plot_loadings_pc1_stability <- create_loadings_stability_plot(
+  1,
+  pca_object$var$coord[, 1],
+  loadings_pc1_bootstrap
+)
 
-# plot_loadings_pc2_stability <- create_loadings_stability_plot(
-#         2,
-#         pca_object$var$coord[, 2],
-#         loadings_pc2_bootstrap
-# )
+plot_loadings_pc2_stability <- create_loadings_stability_plot(
+  2,
+  pca_object$var$coord[, 2],
+  loadings_pc2_bootstrap
+)
 
-# plot_loadings_pc3_stability <- create_loadings_stability_plot(
-#         3,
-#         pca_object$var$coord[, 3],
-#         loadings_pc3_bootstrap
-# )
+plot_loadings_pc3_stability <- create_loadings_stability_plot(
+  3,
+  pca_object$var$coord[, 3],
+  loadings_pc3_bootstrap
+)
 
 ## ----------------------------------------------------------------------------------------------------------
 ## -------------------------------------------- MDS/CLUST/ETC -----------------------------------------------
