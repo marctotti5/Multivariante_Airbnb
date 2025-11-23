@@ -41,3 +41,199 @@ knitr::opts_chunk$set(
 ## Cargar aquí librerías y datos (mismos que en el script correspondiente)
 load("data_entrega1.RData")
 ```
+
+# Principal Component Analysis
+The final part of our task we compute a Principal Component Analysis (PCA) to our dataset. The main goal of the PCA is to reduce the dimensionality of our dataset while being able to mantain the core information of it. 
+
+## PCA analysis
+Our following code computes the PCA by the correlation matrix based on the numeric variables of our Airbnb dataset.
+
+```{r}
+variables_PCA <- data_airbnb_sample %>%
+        select_if(is.numeric) %>%
+        select(-latitude, -longitude) %>%
+        colnames()
+
+pca_object <- PCA(
+        data_airbnb_sample[, variables_PCA],
+        scale.unit = TRUE,
+        ncp = 5,
+        graph = F
+)
+```
+
+From the following Cattell's scree graph which represent the values of the eigenvalues in relation to their according dimensions, or component number, we select does eigenvalues which follow the Kaiser's criterion which take those eigenvalues whose values are higher or equal than 1 when computing the covariance matrix.
+
+```{r, echo = FALSE, message=FALSE, warning = FALSE}
+plot(pca_screeplot_eigenvalues)
+```
+
+We also compute a graph regarding the percentage of explained variability of each component of the PCA. We can observe that we select three components which account for 57,5 % of variability.
+
+```{r, echo = FALSE, message=FALSE, warning=FALSE}
+plot(pca_screeplot_variance)
+```
+
+## Correlation plots between PC's and original variables
+
+In this section we provide correlation plots between the three components with respect to the originals variables in our dataset.
+
+### Correlation plots between PC1 and PC2
+
+The following plot corresponds to the correlation plot between PC1 and PC2. We notice two groups of numeric variables that are positively highly correlated, one with PC1 and other with PC2, except two variable; the minimum nights and the host total listing counts.
+
+```{r, echo = FALSE, message=FALSE, warning=FALSE}
+plot(pca_correlation_dimensions_1_2)
+```
+
+### Correlation plots between PC1 and PC3
+
+The following plot corresponds to the correlation plot between PC1 and PC3. We observe two groups of numeric variables that are positively highly correlated, one with PC1 and other with PC3, except the variable review scores value which has a little negative correlation with PC3.
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+plot(pca_correlation_dimensions_1_3)
+```
+
+### Correlation plots between PC2 and PC3.
+
+The following plot corresponds to the correlation plot between PC2 and PC3. We observe that, in this case, the correlation values of the numeric variables are more spread and only one variable which is minimum nights is highly correlated with PC3.
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+plot(pca_correlation_dimensions_2_3)
+```
+
+## Contribution plots
+
+Other way we have to observe how much each original numeric variable contributes to each one of our principal componentes and whether it contributes possitively or negatively is the contribution plot. 
+
+### Contribution plot PC1
+
+In our first plot we get to see how each original numeric variable contributes to the PC1. We observe that the ones who contribute the most are accomodates, bedrooms, bathrooms and price which makes sense because more people imply more bedrooms and bathrooms and bigger properties imply more price, so it makes sense that these variables are highly correlated between each other and are part of PC2.
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+plot(pca_contribution_dim1)
+```
+
+### Contribution plot PC2
+
+In our second plot we get to see how each original numeric variable contributes to the PC2. The variables which contribute the most are the number of reviews, the estimated occupancy of each year, the review scores value, the age of the host and the total number of listings that the host has. The numbers of reviews is correlated with the review scores value, the scores values with the estimated occupancy and the age of the host with the total number of listings, so it makes sense that these variables are highly correlated with each other and are part of PC2.
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+plot(pca_contribution_dim2)
+```
+
+
+### Contribution plot PC3
+
+In our third plot we get to see how each original numeric variable contributes to the PC3. There is one variable that contributes exponentially more than any other is the minimum nights variables which contributes more than 50% of the PC3. Recall that in the correlation plot of the PC1 and PC3 and PC2 and PC3, we observed that these variable was the one who had the biggest correlation with PC3 so this makes sense.
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+plot(pca_contribution_dim3)
+```
+
+
+### Correlation heatmap
+
+Finally we plot a correlation heatmap which allow us to see the level of correlation of the original numeric variables with each one of the principal components. The results justifies the previous contribution and correlation plots which we have explained before.
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+pheatmap(
+cor_matrix_pca,
+cluster_rows = FALSE,
+cluster_cols = FALSE,
+display_numbers = TRUE,
+color = colorRampPalette(c("blue", "white", "red"))(100),
+main = "Correlations between original variables and PCs (1-3)",
+fontsize_row = 8
+)
+```
+
+
+## PCA stability analysis
+In the final part of our project we compute a stability analysis for our PCA by bootstrap. 
+
+```{r}
+set.seed(123)
+n_obs <- nrow(data_airbnb_sample)
+n_bootstrap <- 10000 # Number of bootstrap samples
+```
+
+ We first create the matrices to store the loadings of the principal components and their eigenvalues.
+
+```{r}
+### Matrices to store the loadings of PC1, PC2 and PC3
+loadings_pc1_bootstrap <- matrix(
+        NA,
+        nrow = n_bootstrap,
+        ncol = length(variables_PCA)
+)
+loadings_pc2_bootstrap <- matrix(
+        NA,
+        nrow = n_bootstrap,
+        ncol = length(variables_PCA)
+)
+loadings_pc3_bootstrap <- matrix(
+        NA,
+        nrow = n_bootstrap,
+        ncol = length(variables_PCA)
+)
+colnames(loadings_pc1_bootstrap) <- variables_PCA
+colnames(loadings_pc2_bootstrap) <- variables_PCA
+colnames(loadings_pc3_bootstrap) <- variables_PCA
+
+### Matrix to store the eigenvalues
+eigenvalues_bootstrap <- matrix(NA, nrow = n_bootstrap, ncol = 5)
+colnames(eigenvalues_bootstrap) <- paste0("PC", 1:5)
+```
+
+We the compute our bootstrap
+
+```{r}
+
+for (i in 1:n_bootstrap) {
+        # Muestra bootstrap (con reemplazo)
+        indices_boot <- sample(1:n_obs, size = n_obs, replace = TRUE)
+        data_bootstrap <- data_airbnb_sample[indices_boot, variables_PCA]
+
+        # PCA en la muestra bootstrap
+        pca_boot <- PCA(
+                data_bootstrap,
+                scale.unit = TRUE,
+                ncp = 5,
+                graph = FALSE
+        )
+
+        # Guardar eigenvalues y loadings
+        eigenvalues_bootstrap[i, ] <- pca_boot$eig[1:5, 1]
+        loadings_pc1_bootstrap[i, ] <- pca_boot$var$coord[, 1]
+        loadings_pc2_bootstrap[i, ] <- pca_boot$var$coord[, 2]
+        loadings_pc3_bootstrap[i, ] <- pca_boot$var$coord[, 3]
+}
+```
+
+
+The following graph corresponds to the stability analysis of our eigenvalues. Recall as we saw before that the only principal components which fulfiled Kaiser's criterion were PC1, PC2 and PC3, in this graph we observe that the criterion is still fulfilled. Our three PCs show to be stable in this plot.
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+plot(plot_eigenvalues_stability)
+```
+
+In the final part of our analysis we check the stability of our corresponding principal components. We can see that the original numerical variables exhibit a clear pattern with the principal component which is shown by the low variablity and the directional agreetment between the bootstrap estimates and the original loadings. 
+
+### Stability analysis of PC1
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+plot(plot_loadings_pc1_stability)
+```
+
+### Stability analysis of PC2
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+plot(plot_loadings_pc2_stability)
+```
+
+### Stability analysis of PC3
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+plot(plot_loadings_pc3_stability)
+```
+
