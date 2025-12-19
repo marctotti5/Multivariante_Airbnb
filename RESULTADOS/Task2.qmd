@@ -1,0 +1,185 @@
+---
+title: "Multivariate Analysis: First Assignment"
+author: "Marc Pastor Pou, Juan Ángel Pérez Córcoles, Eduardo Gambín Monserrat"
+date: "`r Sys.Date()`"
+tbl-cap-location: bottom
+output:
+  html_document:
+    self_contained: true
+    keep_md: false
+    css: styles.css
+format:
+  html:
+    toc: true
+    toc-title: "Table of Contents"
+    toc-depth: 3 # Controls heading levels (e.g., H1, H2, H3)
+    toc-location: left # You can also use "right"
+    number-sections: false # Adds numbering to headings
+    smooth-scroll: true
+  pdf:
+    documentclass: scrartcl
+    papersize: a4paper
+    geometry: margin=25mm
+    monofont: "JetBrains Mono"
+    fig-pos: "!htp"
+    toc: false
+    number-sections: true
+    keep-tex: false
+    fig-width: 6
+    fig-height: 4
+    fontsize: 10pt
+    pdf-engine: xelatex
+    include-in-header: preamble.tex
+    df-print: default
+---
+
+```{r setup, include = FALSE, warning = FALSE, message = FALSE}
+knitr::opts_chunk$set(
+  warning = FALSE,
+  message = FALSE,
+  echo = FALSE
+)
+```
+
+
+```{r}
+library(tidyverse)
+library(DataExplorer)
+`%notin%` <- Negate("%in%")
+library(labelled)
+library(janitor)
+library(gtsummary)
+library(gt)
+library(corrplot)
+library(ggcorrplot)
+library(GGally)
+library(FactoMineR)
+library(factoextra)
+library(leaflet)
+library(pheatmap)
+library(sf)
+library(cluster)
+library(dbrobust)
+library(DescTools)
+library(vegan)
+library(biotools)
+library(fpc)
+```
+
+
+## Introduction
+
+For this second assignment we continue to work with the data from [Inside Airbnb](https://insideairbnb.com/) database. This time we compute a two Multidimensional Scaling (MDS) techniques; MDS based on G-Gower distance and Related Metric Scaling (RelMS) and a Cluster analysis.
+
+
+## MDS
+
+In this assignment we compute an MDS based on G-Gower Distance and an MDS configuration called Related Metric Scaling (RelMS). G-Gower distance is a generalization of Gower Distance which helps us compute dissimilarities between mixed data types, allowing us to observe the overall similarity across all variables, giving a broad view of how items relate. RelMS emphasizes certain prespecified relationships or structures in the data while still preserving distances, RelMS highlights specific structures or patterns in the data .
+
+### G-Gower and RelMS comparison
+
+#### Variance Comparison
+
+The @fig-fig-plot-variance-comparison shows how much variation is captured by a specific dimension for each method. As we can observe for the first two dimensions G-Gower is able to capture more variation while for the rest of dimensions RelMS is able to capture a little bit more variation. This is because G-Gower is able to capture the more "general" view of the patterns in our data while RelMS capture the more "subtle" details that appear in later dimensions.
+
+```{r}
+#| label: fig-plot-variance-comparison
+#| fig-cap: "Variance comparison for G-Gower and RelMs."
+plot_variance_comparison
+```
+
+#### Cumulative Variance Comparison
+
+Another way we can observe the performance of both methods in capturing the variation of each dimension is through the @fig-plot-cumulative-variance-comparison, which shows the cumulative variance. Even though both models capture a significant amount of cumulative variation (both beyond the 70% threshold), the G-Gower is able to capture a little bit more of cumulative variation than the RelMS.
+
+```{r}
+#| label: fig-plot-cumulative-variance-comparison
+#| fig-cap: "Cumulative Variance comparison for G-Gower and RelMs."
+plot_cumulative_comparison
+```
+
+### G-Gower and RelMS correlation with original variables
+
+The following plots allows us to see the correlation between each variable and each MDS dimension computed by both methods.
+
+#### Correlation Heatmap for G-Gower
+
+We first look at our heatmap for G-Gower @fig-heatmap-associations_ggower. The first dimension here separates high-value listings with full amenities from more basic options this is clear because it has a high positive correlation with the variables like: Price, Accommodates, Air Conditioning and Heating. The second dimension presents a higher positive correlation with the variables: Elevator and Air Conditioning and a negative correlation with the Number of Reviews, which are more like secondary features when looking for a house. The third dimension has a high positive correlation with Heating, the rest of the dimensions start showing less correlation between the variables with the dimensions because of the G-Gower distance tendency to give "general" explanations.
+
+```{r}
+#| label: fig-heatmap-associations_ggower
+#| fig-cap: "Correlation Heatmap for G-Gower."
+heatmap_associations_ggower
+```
+
+We now look at our heatmap for RelMS @fig-heatmap-associations_relms. The first dimension is similar to the one for GG-power but in this case it gives a higher correlation value to the variable Air Conditioning. The same can be said for the second dimension in which RelMS captures a high correlation for the same variables as G-Gower but in this case it gives a higher correlation value to Elevator. For the next dimensions it captures a bigger amount of correlation between the dimensions and the variables because of its nature to give more specific insights in the data.
+
+#### Correlation Heatmap for RelMS
+```{r}
+#| label: fig-heatmap-associations_relms
+#| fig-cap: "Correlation Heatmap for RelMS."
+heatmap_associations_relms
+```
+
+### Comparison plots for categorical variables 
+
+The following section we compute a series of MDS comparison plots between dimension 1 and dimension 2 for a series of variables.
+
+#### Comparison plot for `room_type`
+
+The following plot @fig-plot-comparison-room_type, allows us to observe how each type of room correlates with each dimension. But the most interesting part of this plot is that it shows that the G-Gower method points are more separated between them showing its "generalization" nature while the points in RelMS are more compacted providing us a look into its specific nature. A better way this plot shows us the difference nature of both models in when we look at the hotel room data point, which is clearly seen in the RelMS section while in the G-Gower section is hidden behind other point.
+
+```{r}
+#| label: fig-plot-comparison-room_type
+#| fig-cap: "Comparison plot for room type."
+create_comparison_plots("room_type")
+```
+
+
+#### Comparison plot for `neighbourhood_group_cleansed` 
+
+The following plot @fig-plot-comparison-neighborhood-group, allows us to observe how each neighborhood correlates with each dimension. Here again we see the nature of each model and how G-Gower is able to capture more variation than the RelMS.
+
+
+```{r}
+#| label: fig-plot-comparison-neighborhood-group
+#| fig-cap: "Comparison plot for neighborhood group."
+create_comparison_plots("neighbourhood_group_cleansed")
+```
+
+#### Comparison plot for `neighbourhood_group_cleansed` (Dimensions 1 and 5)
+
+This plot @fig-plot-comparison-neighborhood-group-d1-d5, has the same purpose as the previous one, the main difference is that now we compare dimensions 1 and 5. We can now see that for lower dimensions RelMS capture a little bit more of variation which affects the correlation between the variables and the dimensions as we have seen in the previous heatmaps.
+
+
+```{r}
+#| label: fig-plot-comparison-neighborhood-group-d1-d5
+#| fig-cap: "Comparison plot for neighborhood group(dimensions 1 and 5)."
+create_comparison_plots("neighbourhood_group_cleansed", dim_x = 1, dim_y = 5)
+```
+
+
+
+### Bootstrap stability analysis 
+
+As we did in our previous assignment, we compute a bootstrap stability analysis for our MDS methods.
+
+#### Eigenvalue stability plot for G-Gower and RelMS
+
+In this figure @fig-fig-plot-eigenvalue-stability we can see the same results as we have seen before. While G-Gower captures more variation for the the first two dimensions, showing its efficiency in "packing" the general parts of the data, RelMS is able to capture more variation in later dimensions which shows its capability in finding meaningful structures in the data.
+
+```{r}
+#| label: fig-plot-eigenvalue-stability
+#| fig-cap: "Eigenvalue stability plot for G-Gower and RelMS."
+plot_eigen_stability
+```
+
+### Coefficient of variation plot for G-Gower and RelMS
+
+This plot @fig-fig-plot-coefficient-of-variation-comparison shows us the reliability of each of the methods. Even though G-Gower captures more variation for the first two dimensions, RelMS is more robust. The increase of the coefficient of variation is due to the fact that as we get further from the more general view of the first dimensions, the dimensions naturally become more unstable.
+
+```{r}
+#| label: fig-plot-coefficient-of-variation-comparison
+#| fig-cap: "Eigenvalue stability plot for G-Gower and RelMS."
+plot_cv_comparison
+```
