@@ -16,6 +16,10 @@ library(factoextra)
 library(leaflet)
 library(pheatmap)
 library(sf)
+library(cluster)
+library(dbrobust)
+library(DescTools)
+library(vegan)
 
 ## ----------------------------------------------------------------------------------------------------------
 ## ----------------------------------------------------------------------------------------------------------
@@ -1012,109 +1016,90 @@ plot_loadings_pc3_stability <- create_loadings_stability_plot(
 ## TODO
 
 ## ----------------------------------------------------------------------------------------------------------
-## -------------------------------------------------- MDS ---------------------------------------------------
+## ------------------------------------------- MDS: G-GOWER vs RELMS ----------------------------------------
 ## ----------------------------------------------------------------------------------------------------------
 
-## MDS classic
-
+## ============== 0. MATRICES DE DISTANCIAS (CUMPLIENDO PROPIEDAD EUCLIDEA) ==============
 data_airbnb_sample <- data_airbnb_sample %>%
   select(-latitude, -longitude)
 
-D_gower <- daisy(
-  select(data_airbnb_sample, -id),
-  metric = "gower"
+numeric_variables_MDS <- data_airbnb_sample %>%
+  select_if(is.numeric) %>%
+  colnames()
+categorical_variables_MDS <- c("neighbourhood_group_cleansed", "room_type")
+binary_variables_MDS <- c("air_conditioning", "elevator", "heating")
+weight_vector <- rep(1, nrow(data_airbnb_sample))
+
+D_robust_ggower_squared <- robust_distances(
+  data = select(data_airbnb_sample, -id),
+  cont_vars = numeric_variables_MDS,
+  bin_vars = binary_variables_MDS,
+  cat_vars = categorical_variables_MDS,
+  method = "ggower",
+  return_dist = FALSE
 )
 
-## Initial try
-D_matrix <- as.matrix(D_gower)
-n <- nrow(D_matrix)
-identity_matrix <- diag(rep(1, n))
-H_matrix <- identity_matrix - (1 / n) * matrix(1, nrow = n, ncol = n)
-G_matrix <- -(1 / 2) * (H_matrix %*% D_matrix^2 %*% H_matrix)
+euclidianize_D_robust_ggower_squared <- make_euclidean(
+  D_robust_ggower_squared,
+  w = weight_vector
+)
+D_robust_ggower <- as.dist(sqrt(euclidianize_D_robust_ggower_squared$D_euc))
 
-eigenvalues_G <- eigen(G_matrix, only.values = TRUE)$values
+D_robust_relms_squared <- robust_distances(
+  data = select(data_airbnb_sample, -id),
+  cont_vars = numeric_variables_MDS,
+  bin_vars = binary_variables_MDS,
+  cat_vars = categorical_variables_MDS,
+  method = "relms",
+  return_dist = FALSE
+)
 
-if (any(eigenvalues_G < 0)) {
-  print("Gram Matrix is Negative definite")
-}
-
-constant_eigen_correction <- 2 * abs(min(eigenvalues_G)) + 1e-6
-D_squared_matrix_modified <- (D_matrix^2 + constant_eigen_correction)
-
-## Modification of distance matrix
-for (i in 1:nrow(D_squared_matrix_modified)) {
-  for (j in 1:ncol(D_squared_matrix_modified)) {
-    if (i == j) {
-      D_squared_matrix_modified[i, j] = 0
-    }
-  }
-}
-
-D_matrix_modified <- sqrt(D_squared_matrix_modified)
-G_matrix_modified <- -(1 / 2) *
-  (H_matrix %*% D_squared_matrix_modified %*% H_matrix)
-
-## Comprobacion de G otra vez
-eigenvalues_G_modified <- eigen(G_matrix_modified, only.values = TRUE)$values
+euclidianize_D_robust_relms_squared <- make_euclidean(
+  D_robust_relms_squared,
+  w = weight_vector
+)
+D_robust_relms <- as.dist(sqrt(euclidianize_D_robust_relms_squared$D_euc))
 
 
-## -------------------------------- MDS classic --------------------------------------
+## ============== 1. CALCULAR AMBOS MDS ==============
 numero_eigenvalues <- 10
-MDS_classic <- cmdscale(D_gower, k = numero_eigenvalues, add = TRUE, eig = TRUE)
-#MDS_classic <- cmdscale(as.dist(D_matrix_modified), k = numero_eigenvalues, eig = TRUE)
-MDS_classic_data <- MDS_classic$points %>% as_data_frame()
 
+MDS_ggower <- cmdscale(D_robust_ggower, k = numero_eigenvalues, eig = TRUE)
+MDS_ggower_data <- MDS_ggower$points %>% as_data_frame()
 
-# Scree plot de autovalores del MDS
-eigenvalues_mds <- data.frame(
-  Dimension = factor(1:numero_eigenvalues),
-  Eigenvalue = MDS_classic$eig[1:numero_eigenvalues],
-  Variance_Explained = (MDS_classic$eig[1:numero_eigenvalues] /
-    sum(MDS_classic$eig)) *
-    100,
-  Cumulative_Variance = cumsum(
-    (MDS_classic$eig[1:numero_eigenvalues] / sum(MDS_classic$eig)) * 100
-  )
-)
+MDS_relms <- cmdscale(D_robust_relms, k = numero_eigenvalues, eig = TRUE)
+MDS_relms_data <- MDS_relms$points %>% as_data_frame()
 
-# Scree plot de autovalores
-screeplot_mds_eigenvalues <- ggplot(
-  eigenvalues_mds,
-  aes(x = factor(Dimension), y = Eigenvalue)
-) +
-  geom_bar(stat = "identity", fill = "steelblue", alpha = 0.8) +
-  geom_line(aes(group = 1), color = "red", linewidth = 1) +
-  geom_point(color = "red", size = 3) +
-  geom_text(
-    aes(label = round(Eigenvalue, 2)),
-    vjust = -0.5,
-    size = 3
-  ) +
-  labs(
-    title = "MDS Scree Plot - Eigenvalues",
-    x = "Dimension",
-    y = "Eigenvalue"
-  ) +
-  theme_minimal() +
-  theme(
-    plot.title = element_text(hjust = 0.5, face = "bold")
+## ============== 2. INTERPRETABILIDAD ==============
+
+### 2.1 Varianza explicada
+var_ggower <- (MDS_ggower$eig[1:10] / sum(MDS_ggower$eig)) * 100
+var_relms <- (MDS_relms$eig[1:10] / sum(MDS_relms$eig)) * 100
+
+comparison_variance <- data.frame(
+  Dimension = rep(1:10, 2),
+  Method = rep(c("G-Gower", "RelMS"), each = 10),
+  Variance = c(var_ggower, var_relms),
+  Cumulative = c(cumsum(var_ggower), cumsum(var_relms))
+) %>%
+  mutate(
+    Dimension = as.factor(Dimension)
   )
 
-# Scree plot de varianza explicada
-screeplot_mds_variance <- ggplot(
-  eigenvalues_mds,
-  aes(x = Dimension, y = Variance_Explained)
+# Plot comparativo de varianza
+plot_variance_comparison <- ggplot(
+  comparison_variance,
+  aes(x = Dimension, y = Variance, fill = Method)
 ) +
-  geom_bar(stat = "identity", fill = "coral", alpha = 0.8) +
-  geom_line(aes(group = 1), color = "darkred", linewidth = 1) +
-  geom_point(color = "darkred", size = 3) +
+  geom_col(position = "dodge") +
   geom_text(
-    aes(label = paste0(round(Variance_Explained, 1), "%")),
+    aes(label = paste0(round(Variance, 1), "%")),
+    position = position_dodge(width = 0.9),
     vjust = -0.5,
-    size = 3
+    size = 2.5
   ) +
   labs(
-    title = "MDS Scree Plot - Variance Explained",
+    title = "Variance Explained: G-Gower vs RelMS",
     x = "Dimension",
     y = "% Variance Explained"
   ) +
@@ -1123,65 +1108,28 @@ screeplot_mds_variance <- ggplot(
     plot.title = element_text(hjust = 0.5, face = "bold")
   )
 
-# Correlations with original variables
-numeric_vars <- data_airbnb_sample %>%
-  select(where(is.numeric)) %>%
-  colnames()
-
-cor_matrix_mds <- cor(
-  data_airbnb_sample[, numeric_vars],
-  MDS_classic_data[, 1:3] # Primeras 3 dimensiones
-)
-colnames(cor_matrix_mds) <- paste0("MDS Dim ", 1:3)
-rownames(cor_matrix_mds) <- unlist(var_label(data_airbnb_sample)[numeric_vars])
-
-heatmap_correlations_MDS_originalvariables <- pheatmap(
-  cor_matrix_mds,
-  cluster_rows = FALSE,
-  cluster_cols = FALSE,
-  display_numbers = TRUE,
-  number_format = "%.2f",
-  color = colorRampPalette(c("blue", "white", "red"))(100),
-  main = "Correlations between original variables and MDS dimensions (1-3)",
-  fontsize_row = 8,
-  fontsize_number = 8,
-  breaks = seq(-1, 1, length.out = 101),
-  legend_breaks = c(-1, -0.5, 0, 0.5, 1),
-  legend_labels = c("-1", "-0.5", "0", "0.5", "1")
-)
-
-## TODO: Comparar/correlar PC's con variables categoricas
-
-# Scree plot de varianza acumulada
-screeplot_mds_cumulative <- ggplot(
-  eigenvalues_mds,
-  aes(x = Dimension, y = Cumulative_Variance)
+# Plot de varianza acumulada
+plot_cumulative_comparison <- ggplot(
+  comparison_variance,
+  aes(x = Dimension, y = Cumulative, color = Method, group = Method)
 ) +
-  geom_bar(stat = "identity", fill = "lightgreen", alpha = 0.8) +
-  geom_line(aes(group = 1), color = "darkgreen", linewidth = 1) +
-  geom_point(color = "darkgreen", size = 3) +
-  geom_text(
-    aes(label = paste0(round(Cumulative_Variance, 1), "%")),
-    vjust = -0.5,
-    size = 3
-  ) +
+  geom_line(linewidth = 1.2) +
+  geom_point(size = 3) +
   geom_hline(
-    yintercept = 80,
+    yintercept = 70,
     linetype = "dashed",
-    color = "red",
-    linewidth = 0.5
+    color = "red"
   ) +
   annotate(
     "text",
     x = 9,
-    y = 80,
-    label = "80% threshold",
+    y = 70,
+    label = "70% threshold",
     vjust = -0.5,
-    color = "red",
-    size = 3
+    color = "red"
   ) +
   labs(
-    title = "MDS Scree Plot - Cumulative Variance",
+    title = "Cumulative Variance: G-Gower vs RelMS",
     x = "Dimension",
     y = "Cumulative % Variance"
   ) +
@@ -1190,115 +1138,964 @@ screeplot_mds_cumulative <- ggplot(
     plot.title = element_text(hjust = 0.5, face = "bold")
   )
 
-## Diagrama de dispersión MDS - 2 primeras dimensiones
-mds_plot_dim1_dim2 <- ggplot(
-  MDS_classic_data,
-  aes(x = V1, y = V2)
+### 2.2 Correlaciones con variables originales (numéricas y categóricas)
+
+# Variables numéricas y categóricas
+numeric_vars <- data_airbnb_sample %>%
+  select(where(is.numeric)) %>%
+  colnames()
+
+categorical_vars <- c(
+  "neighbourhood_group_cleansed",
+  "room_type",
+  "air_conditioning",
+  "heating",
+  "elevator"
+)
+
+## -------- Función para calcular V de Cramér --------
+calculate_cramer_v_mds <- function(categorical_var, mds_dimension) {
+  # Discretizar la dimensión MDS en 5 categorías (quintiles)
+  mds_cat <- cut(
+    mds_dimension,
+    breaks = quantile(mds_dimension, probs = seq(0, 1, 0.2)),
+    include.lowest = TRUE,
+    labels = c("Very Low", "Low", "Medium", "High", "Very High")
+  )
+
+  # Tabla de contingencia
+  contingency_table <- table(categorical_var, mds_cat)
+
+  # V de Cramér
+  cramer_v <- CramerV(contingency_table)
+
+  return(cramer_v)
+}
+
+## -------- G-Gower: Correlaciones numéricas --------
+cor_ggower_numeric <- cor(
+  data_airbnb_sample[, numeric_vars],
+  MDS_ggower_data[, 1:5],
+  method = "spearman"
+)
+colnames(cor_ggower_numeric) <- paste0("MDS Dim ", 1:5)
+rownames(cor_ggower_numeric) <- unlist(var_label(data_airbnb_sample)[
+  numeric_vars
+])
+
+## -------- G-Gower: V de Cramér para categóricas --------
+cramer_ggower <- matrix(
+  NA,
+  nrow = length(categorical_vars),
+  ncol = 5
+)
+
+rownames(cramer_ggower) <- unlist(var_label(data_airbnb_sample)[
+  categorical_vars
+])
+colnames(cramer_ggower) <- paste0("MDS Dim ", 1:5)
+
+for (i in 1:length(categorical_vars)) {
+  for (j in 1:5) {
+    cramer_ggower[i, j] <- calculate_cramer_v_mds(
+      data_airbnb_sample[[categorical_vars[i]]],
+      MDS_ggower_data[[j]]
+    )
+  }
+}
+
+## -------- G-Gower: Combinar correlaciones y V de Cramér --------
+associations_ggower <- rbind(
+  #abs(cor_ggower_numeric[, 1:5]),
+  cor_ggower_numeric[, 1:5],
+  cramer_ggower
+)
+
+## -------- RELMS: Correlaciones numéricas --------
+cor_relms_numeric <- cor(
+  data_airbnb_sample[, numeric_vars],
+  MDS_relms_data[, 1:5],
+  method = "spearman"
+)
+colnames(cor_relms_numeric) <- paste0("MDS Dim ", 1:5)
+rownames(cor_relms_numeric) <- unlist(var_label(data_airbnb_sample)[
+  numeric_vars
+])
+
+## -------- RELMS: V de Cramér para categóricas --------
+cramer_relms <- matrix(
+  NA,
+  nrow = length(categorical_vars),
+  ncol = 5
+)
+
+rownames(cramer_relms) <- unlist(var_label(data_airbnb_sample)[
+  categorical_vars
+])
+colnames(cramer_relms) <- paste0("MDS Dim ", 1:5)
+
+for (i in 1:length(categorical_vars)) {
+  for (j in 1:5) {
+    cramer_relms[i, j] <- calculate_cramer_v_mds(
+      data_airbnb_sample[[categorical_vars[i]]],
+      MDS_relms_data[[j]]
+    )
+  }
+}
+
+## -------- RELMS: Combinar correlaciones y V de Cramér --------
+associations_relms <- rbind(
+  #abs(cor_relms_numeric[, 1:5]),
+  cor_relms_numeric[, 1:5],
+  cramer_relms
+)
+
+## -------- Heatmaps comparativos --------
+heatmap_associations_ggower <- pheatmap(
+  associations_ggower,
+  cluster_rows = FALSE,
+  cluster_cols = FALSE,
+  display_numbers = TRUE,
+  number_format = "%.2f",
+  color = colorRampPalette(c("blue", "white", "red"))(100),
+  main = "G-Gower: Associations with MDS dimensions (1-5)",
+  fontsize_row = 7,
+  fontsize_number = 7,
+  breaks = seq(-1, 1, length.out = 101),
+  legend_breaks = c(-1, -0.75, -0.5, -0.25, 0, 0.25, 0.5, 0.75, 1),
+  annotation_row = data.frame(
+    Type = c(
+      rep("Numeric (|Pearson|)", nrow(cor_ggower_numeric)),
+      rep("Categorical (Cramér's V)", nrow(cramer_ggower))
+    ),
+    row.names = rownames(associations_ggower)
+  )
+)
+
+heatmap_associations_relms <- pheatmap(
+  associations_relms,
+  cluster_rows = FALSE,
+  cluster_cols = FALSE,
+  display_numbers = TRUE,
+  number_format = "%.2f",
+  color = colorRampPalette(c("blue", "white", "red"))(100),
+  main = "RelMS: Associations with MDS dimensions (1-5)",
+  fontsize_row = 7,
+  fontsize_number = 7,
+  breaks = seq(-1, 1, length.out = 101),
+  legend_breaks = c(-1, -0.75, -0.5, -0.25, 0, 0.25, 0.5, 0.75, 1),
+  annotation_row = data.frame(
+    Type = c(
+      rep("Numeric (|Pearson|)", nrow(cor_ggower_numeric)),
+      rep("Categorical (Cramér's V)", nrow(cramer_ggower))
+    ),
+    row.names = rownames(associations_ggower)
+  )
+)
+
+
+### 2.3 Visualización de separación por variables categóricas
+create_comparison_plots <- function(
+  variable,
+  dim_x = 1,
+  dim_y = 2,
+  include_density = FALSE
+) {
+  # Validar dimensiones
+  max_dim <- ncol(MDS_ggower_data)
+  if (dim_x < 1 || dim_x > max_dim || dim_y < 1 || dim_y > max_dim) {
+    stop(paste("Dimensions must be between 1 and", max_dim))
+  }
+  if (dim_x == dim_y) {
+    stop("dim_x and dim_y must be different")
+  }
+
+  # Detectar tipo de variable
+  var_data <- data_airbnb_sample[[variable]]
+  is_numeric <- is.numeric(var_data)
+  is_categorical <- is.factor(var_data) || is.character(var_data)
+
+  # Obtener nombres de columnas para las dimensiones seleccionadas
+  col_x <- paste0("V", dim_x)
+  col_y <- paste0("V", dim_y)
+
+  # Combinar datos de ambos métodos
+  combined_data <- bind_rows(
+    MDS_ggower_data %>%
+      mutate(
+        group = var_data,
+        Method = "G-Gower",
+        x_coord = .data[[col_x]],
+        y_coord = .data[[col_y]]
+      ),
+    MDS_relms_data %>%
+      mutate(
+        group = var_data,
+        Method = "RelMS",
+        x_coord = .data[[col_x]],
+        y_coord = .data[[col_y]]
+      )
+  ) %>%
+    mutate(Method = factor(Method, levels = c("G-Gower", "RelMS")))
+
+  # Crear plot base
+  base_plot <- ggplot(
+    combined_data,
+    aes(x = x_coord, y = y_coord)
+  )
+
+  # Añadir capa de puntos según tipo de variable
+  if (is_numeric) {
+    # Variable numérica: escala de color continua
+    scatterplot <- base_plot +
+      geom_point(aes(color = group), alpha = 0.6, size = 2) +
+      scale_color_viridis_c(
+        option = "plasma",
+        name = var_label(data_airbnb_sample)[[variable]]
+      ) +
+      facet_grid(. ~ Method, scales = "free") +
+      labs(
+        title = paste(
+          "MDS Comparison:",
+          var_label(data_airbnb_sample)[[variable]]
+        ),
+        subtitle = paste0(
+          "G-Gower: Dim ",
+          dim_x,
+          " (",
+          round(var_ggower[dim_x], 1),
+          "%) vs Dim ",
+          dim_y,
+          " (",
+          round(var_ggower[dim_y], 1),
+          "%) | ",
+          "RelMS: Dim ",
+          dim_x,
+          " (",
+          round(var_relms[dim_x], 1),
+          "%) vs Dim ",
+          dim_y,
+          " (",
+          round(var_relms[dim_y], 1),
+          "%)"
+        ),
+        x = paste0("Dimension ", dim_x),
+        y = paste0("Dimension ", dim_y)
+      ) +
+      theme_minimal() +
+      theme(
+        plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
+        plot.subtitle = element_text(hjust = 0.5, size = 9),
+        strip.text = element_text(face = "bold", size = 11),
+        strip.background = element_rect(fill = "lightgray", color = "black"),
+        legend.position = "bottom",
+        legend.title = element_text(face = "bold"),
+        aspect.ratio = 1
+      )
+  } else if (is_categorical) {
+    # Contar número de categorías únicas
+    n_categories <- length(unique(var_data[!is.na(var_data)]))
+
+    # Elegir paleta de colores según número de categorías
+    if (n_categories <= 9) {
+      # Usar Set1 para ≤9 categorías
+      color_scale <- scale_color_brewer(
+        palette = "Set1",
+        name = var_label(data_airbnb_sample)[[variable]]
+      )
+    } else if (n_categories <= 12) {
+      # Usar Set3 o Paired para 10-12 categorías
+      color_scale <- scale_color_brewer(
+        palette = "Set3",
+        name = var_label(data_airbnb_sample)[[variable]]
+      )
+    } else {
+      # Usar paleta continua interpolada para >12 categorías
+      color_scale <- scale_color_manual(
+        values = colorRampPalette(
+          RColorBrewer::brewer.pal(12, "Set3")
+        )(n_categories),
+        name = var_label(data_airbnb_sample)[[variable]]
+      )
+    }
+
+    # Variable categórica: colores discretos
+    scatterplot <- base_plot +
+      geom_point(aes(color = group), alpha = 0.6, size = 2) +
+      color_scale +
+      facet_grid(. ~ Method, scales = "free") +
+      labs(
+        title = paste(
+          "MDS Comparison:",
+          var_label(data_airbnb_sample)[[variable]]
+        ),
+        subtitle = paste0(
+          "G-Gower: Dim ",
+          dim_x,
+          " (",
+          round(var_ggower[dim_x], 1),
+          "%) vs Dim ",
+          dim_y,
+          " (",
+          round(var_ggower[dim_y], 1),
+          "%) | ",
+          "RelMS: Dim ",
+          dim_x,
+          " (",
+          round(var_relms[dim_x], 1),
+          "%) vs Dim ",
+          dim_y,
+          " (",
+          round(var_relms[dim_y], 1),
+          "%)"
+        ),
+        x = paste0("Dimension ", dim_x),
+        y = paste0("Dimension ", dim_y)
+      ) +
+      theme_minimal() +
+      theme(
+        plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
+        plot.subtitle = element_text(hjust = 0.5, size = 9),
+        strip.text = element_text(face = "bold", size = 11),
+        strip.background = element_rect(fill = "lightgray", color = "black"),
+        legend.position = "bottom",
+        legend.title = element_text(face = "bold"),
+        aspect.ratio = 1
+      )
+
+    # Ajustar leyenda para muchas categorías (≥10)
+    if (n_categories >= 10) {
+      scatterplot <- scatterplot +
+        guides(
+          color = guide_legend(
+            ncol = ceiling(n_categories / 8), # Múltiples columnas
+            byrow = TRUE,
+            title.position = "top",
+            title.hjust = 0.5
+          )
+        ) +
+        theme(
+          legend.text = element_text(size = 7), # Letra más pequeña
+          legend.key.size = unit(0.4, "cm") # Iconos más pequeños
+        )
+    }
+  } else {
+    stop("Variable type not supported. Must be numeric, factor, or character.")
+  }
+
+  return(scatterplot)
+}
+
+
+# Probar con neighbourhood
+create_comparison_plots("room_type")
+create_comparison_plots("accommodates")
+create_comparison_plots("host_total_listings_count")
+create_comparison_plots("price")
+
+create_comparison_plots("air_conditioning")
+create_comparison_plots("heating")
+create_comparison_plots("elevator")
+create_comparison_plots("number_of_reviews")
+
+create_comparison_plots("neighbourhood_group_cleansed")
+create_comparison_plots("neighbourhood_group_cleansed", dim_x = 1, dim_y = 5)
+create_comparison_plots("host_total_listings_count")
+create_comparison_plots("host_age_years")
+create_comparison_plots("review_scores_value")
+
+
+## ============== 3. ESTABILIDAD (BOOTSTRAP) ==============
+set.seed(123)
+n_bootstrap <- 10
+n_obs <- nrow(data_airbnb_sample)
+
+# Matrices para guardar coordenadas bootstrap
+coords_ggower_boot <- array(NA, dim = c(n_bootstrap, n_obs, 3))
+coords_relms_boot <- array(NA, dim = c(n_bootstrap, n_obs, 3))
+
+# Matrices para guardar eigenvalues
+eigen_ggower_boot <- matrix(NA, nrow = n_bootstrap, ncol = 10)
+eigen_relms_boot <- matrix(NA, nrow = n_bootstrap, ncol = 10)
+
+cat("\nIniciando bootstrap para estabilidad...\n")
+
+for (i in 1:n_bootstrap) {
+  if (i %% 50 == 0) {
+    cat("  Bootstrap iteration:", i, "/", n_bootstrap, "\n")
+  }
+
+  # Muestra bootstrap
+  indices_boot <- sample(1:n_obs, size = n_obs, replace = TRUE)
+  data_boot <- data_airbnb_sample[indices_boot, ]
+
+  # Recalcular distancias robustas G-Gower
+  D_ggower_boot_sq <- robust_distances(
+    data = select(data_boot, -id),
+    cont_vars = numeric_variables_MDS,
+    bin_vars = binary_variables_MDS,
+    cat_vars = categorical_variables_MDS,
+    method = "ggower",
+    return_dist = FALSE
+  )
+
+  eucl_ggower_boot <- make_euclidean(D_ggower_boot_sq, w = rep(1, n_obs))
+  D_ggower_boot_euc <- pmax(eucl_ggower_boot$D_euc, 0) # Reemplazar negativos por 0
+  D_ggower_boot <- as.dist(sqrt(D_ggower_boot_euc))
+
+  # Recalcular distancias robustas RELMS
+  D_relms_boot_sq <- robust_distances(
+    data = select(data_boot, -id),
+    cont_vars = numeric_variables_MDS,
+    bin_vars = binary_variables_MDS,
+    cat_vars = categorical_variables_MDS,
+    method = "relms",
+    return_dist = FALSE
+  )
+
+  eucl_relms_boot <- make_euclidean(D_relms_boot_sq, w = rep(1, n_obs))
+  D_relms_boot_euc <- pmax(eucl_relms_boot$D_euc, 0) # Reemplazar negativos por 0
+  D_relms_boot <- as.dist(sqrt(D_relms_boot_euc))
+
+  # MDS bootstrap
+  mds_ggower_boot <- cmdscale(D_ggower_boot, k = 10, eig = TRUE)
+  mds_relms_boot <- cmdscale(D_relms_boot, k = 10, eig = TRUE)
+
+  # Guardar resultados
+  coords_ggower_boot[i, , ] <- mds_ggower_boot$points[, 1:3]
+  coords_relms_boot[i, , ] <- mds_relms_boot$points[, 1:3]
+
+  eigen_ggower_boot[i, ] <- mds_ggower_boot$eig[1:10]
+  eigen_relms_boot[i, ] <- mds_relms_boot$eig[1:10]
+}
+
+### 3.1 Estabilidad de eigenvalues
+eigen_stability <- data.frame(
+  Dimension = rep(1:10, 2),
+  Method = rep(c("G-Gower", "RELMS"), each = 10),
+  Original = c(MDS_ggower$eig[1:10], MDS_relms$eig[1:10]),
+  Mean_Boot = c(
+    colMeans(eigen_ggower_boot),
+    colMeans(eigen_relms_boot)
+  ),
+  SD_Boot = c(
+    apply(eigen_ggower_boot, 2, sd),
+    apply(eigen_relms_boot, 2, sd)
+  ),
+  CI_lower = c(
+    apply(eigen_ggower_boot, 2, quantile, probs = 0.025),
+    apply(eigen_relms_boot, 2, quantile, probs = 0.025)
+  ),
+  CI_upper = c(
+    apply(eigen_ggower_boot, 2, quantile, probs = 0.975),
+    apply(eigen_relms_boot, 2, quantile, probs = 0.975)
+  )
+)
+
+# Plot de estabilidad de eigenvalues
+plot_eigen_stability <- ggplot(
+  eigen_stability %>% filter(Dimension <= 5),
+  aes(x = factor(Dimension), y = Original, color = Method)
 ) +
-  geom_point(alpha = 0.5, size = 2, color = "steelblue") +
+  geom_point(size = 4, position = position_dodge(0.3)) +
+  geom_errorbar(
+    aes(ymin = CI_lower, ymax = CI_upper),
+    width = 0.2,
+    position = position_dodge(0.3),
+    linewidth = 1
+  ) +
   labs(
-    title = "MDS - First Two Dimensions",
+    title = "Eigenvalue Stability: G-Gower vs RelMS",
+    subtitle = "Points = Original; Error bars = 95% Bootstrap CI",
+    x = "Dimension",
+    y = "Eigenvalue"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold"),
+    plot.subtitle = element_text(hjust = 0.5)
+  )
+
+### 3.2 Coeficiente de variación (CV) de eigenvalues
+cv_comparison <- data.frame(
+  Dimension = 1:10,
+  CV_GGower = (apply(eigen_ggower_boot, 2, sd) /
+    colMeans(eigen_ggower_boot)) *
+    100,
+  CV_RELMS = (apply(eigen_relms_boot, 2, sd) /
+    colMeans(eigen_relms_boot)) *
+    100
+) %>%
+  pivot_longer(
+    cols = starts_with("CV"),
+    names_to = "Method",
+    values_to = "CV",
+    names_prefix = "CV_"
+  )
+
+plot_cv_comparison <- ggplot(
+  cv_comparison,
+  aes(x = factor(Dimension), y = CV, fill = Method)
+) +
+  geom_col(position = "dodge") +
+  labs(
+    title = "Coefficient of Variation: G-Gower vs RELMS",
+    subtitle = "Lower CV = More stable",
+    x = "Dimension",
+    y = "CV (%)"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold"),
+    plot.subtitle = element_text(hjust = 0.5)
+  )
+
+
+summary_comparison <- data.frame(
+  Metric = c(
+    "Variance Dim 1-3 (%)",
+    "Mean CV Eigenvalues (Dim 1-3)",
+    "Strongest association (Dim 1)"
+  ),
+  GGower = c(
+    round(sum(var_ggower[1:3]), 2),
+    round(
+      mean(cv_comparison$CV[
+        cv_comparison$Method == "GGower" &
+          cv_comparison$Dimension <= 3
+      ]),
+      2
+    ),
+    names(sort(associations_ggower[, 1], decreasing = TRUE)[1])
+  ),
+  RELMS = c(
+    round(sum(var_relms[1:3]), 2),
+    round(
+      mean(cv_comparison$CV[
+        cv_comparison$Method == "RELMS" &
+          cv_comparison$Dimension <= 3
+      ]),
+      2
+    ),
+    names(sort(associations_relms[, 1], decreasing = TRUE)[1])
+  )
+) %>%
+  gt() %>%
+  # Título y subtítulo
+  tab_header(
+    title = md("**MDS Comparison: G-Gower vs RelMS**"),
+    subtitle = "Summary of key performance metrics"
+  ) %>%
+  # Renombrar columnas
+  cols_label(
+    Metric = md("**Metric**"),
+    GGower = md("**G-Gower**"),
+    RELMS = md("**RelMS**")
+  ) %>%
+  # Alinear columnas
+  cols_align(
+    align = "left",
+    columns = Metric
+  ) %>%
+  cols_align(
+    align = "center",
+    columns = c(GGower, RELMS)
+  ) %>%
+  # Añadir nota al pie
+  tab_source_note(
+    source_note = md(
+      "*Lower CV indicates higher stability. Higher variance indicates better dimensionality reduction.*"
+    )
+  ) %>%
+  # Bordes y formato general
+  tab_options(
+    table.border.top.color = "black",
+    table.border.top.width = px(3),
+    table.border.bottom.color = "black",
+    table.border.bottom.width = px(3),
+    heading.border.bottom.color = "black",
+    heading.border.bottom.width = px(2),
+    column_labels.border.top.color = "black",
+    column_labels.border.top.width = px(2),
+    column_labels.border.bottom.color = "black",
+    column_labels.border.bottom.width = px(2),
+    table_body.border.bottom.color = "black",
+    table_body.border.bottom.width = px(2),
+    heading.align = "center",
+    column_labels.font.weight = "bold",
+    table.font.size = px(14),
+    heading.title.font.size = px(18),
+    heading.subtitle.font.size = px(14),
+    source_notes.font.size = px(11)
+  ) %>%
+  # Añadir líneas entre filas
+  tab_style(
+    style = cell_borders(
+      sides = "bottom",
+      color = "lightgray",
+      weight = px(1)
+    ),
+    locations = cells_body(
+      rows = 1:2
+    )
+  )
+
+cat("\n=== SUMMARY: G-Gower vs RELMS ===\n")
+print(summary_comparison)
+
+# Visualizar todos los plots principales
+plot_variance_comparison
+plot_cumulative_comparison
+plot_eigen_stability
+plot_cv_comparison
+
+
+## ----------------------------------------------------------------------------------------------------------
+## -------------------------------------------------- CLUSTERING --------------------------------------------
+## ----------------------------------------------------------------------------------------------------------
+
+## CLUSTERING JERARQUICO UTILIZANDO MATRIZ DISTANCIAS RelMS
+## ============== 1. DEFINIR MÉTODOS DE LINKAGE A COMPARAR ==============
+linkage_methods <- c(
+  "single",
+  "complete",
+  "average",
+  "ward.D2",
+  "mcquitty",
+  "median",
+  "centroid"
+)
+
+## ============== 2. CALCULAR CORRELACIÓN COFENÉTICA PARA CADA MÉTODO ==============
+cophenetic_results <- data.frame(
+  Method = linkage_methods,
+  Cophenetic_Correlation = NA_real_,
+  stringsAsFactors = FALSE
+)
+
+hierarchical_models <- list()
+
+cat("\nCalculando correlación cofenética para cada método de linkage...\n")
+
+for (i in seq_along(linkage_methods)) {
+  method <- linkage_methods[i]
+
+  cat("  Método:", method, "... ")
+
+  # Calcular clustering jerárquico
+  hc_model <- hclust(D_robust_relms, method = method)
+
+  # Calcular matriz de distancias cofenéticas
+  coph_dist <- cophenetic(hc_model)
+
+  # Calcular correlación cofenética
+  coph_cor <- cor(D_robust_relms, coph_dist)
+
+  # Guardar resultados
+  cophenetic_results$Cophenetic_Correlation[i] <- coph_cor
+  hierarchical_models[[method]] <- hc_model
+
+  cat("Correlación =", round(coph_cor, 4), "\n")
+}
+
+## ============== 3. ORDENAR Y MOSTRAR RESULTADOS ==============
+cophenetic_results <- cophenetic_results %>%
+  arrange(desc(Cophenetic_Correlation))
+
+
+## ============== 4. GRÁFICO DE COMPARACIÓN ==============
+plot_cophenetic_comparison <- ggplot(
+  cophenetic_results,
+  aes(
+    x = reorder(Method, Cophenetic_Correlation),
+    y = Cophenetic_Correlation,
+    fill = Cophenetic_Correlation
+  )
+) +
+  geom_col() +
+  geom_text(
+    aes(label = round(Cophenetic_Correlation, 3)),
+    hjust = -0.1,
+    size = 4
+  ) +
+  scale_fill_gradient2(
+    low = "red",
+    mid = "yellow",
+    high = "green",
+    midpoint = median(cophenetic_results$Cophenetic_Correlation),
+    name = "Correlation"
+  ) +
+  coord_flip() +
+  labs(
+    title = "Cophenetic Correlation by Linkage Method",
+    subtitle = "Higher correlation = Better representation of original distances",
+    x = "Linkage Method",
+    y = "Cophenetic Correlation"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
+    plot.subtitle = element_text(hjust = 0.5, size = 10),
+    legend.position = "none"
+  ) +
+  ylim(0, 1)
+
+plot_cophenetic_comparison
+
+## ============== 5. SELECCIONAR MEJOR MÉTODO ==============
+best_method <- cophenetic_results$Method[1]
+best_correlation <- cophenetic_results$Cophenetic_Correlation[1]
+
+## ============== 6. DENDROGRAMAS PARA LOS TOP 3 MÉTODOS ==============
+top3_methods <- cophenetic_results$Method[1:3]
+
+cat("\n\nGenerando dendrogramas para los top 3 métodos...\n")
+
+dendrograms_list <- list()
+
+for (method in top3_methods) {
+  cat("  Generando dendrograma para:", method, "\n")
+
+  hc_model <- hierarchical_models[[method]]
+
+  # Dendrograma básico
+  dend_plot <- fviz_dend(
+    hc_model,
+    k = 4, # Número de clusters a visualizar
+    cex = 0.5,
+    palette = "jco",
+    rect = TRUE,
+    rect_border = "jco",
+    rect_fill = TRUE,
+    main = paste0(
+      "Dendrogram - ",
+      toupper(method),
+      " Linkage\n",
+      "Cophenetic Correlation: ",
+      round(
+        cophenetic_results$Cophenetic_Correlation[
+          cophenetic_results$Method == method
+        ],
+        3
+      )
+    )
+  ) +
+    theme(
+      plot.title = element_text(hjust = 0.5, face = "bold")
+    )
+
+  dendrograms_list[[method]] <- dend_plot
+}
+
+## ============== 7. MOSTRAR DENDROGRAMAS ==============
+# Dendrograma del mejor método
+dendrograms_list[[best_method]]
+
+# Comparar los 3 mejores
+gridExtra::grid.arrange(
+  dendrograms_list[[top3_methods[1]]],
+  dendrograms_list[[top3_methods[2]]],
+  dendrograms_list[[top3_methods[3]]],
+  ncol = 1
+)
+
+## ============== 8. ANÁLISIS DEL MEJOR MÉTODO: DETERMINAR K ÓPTIMO ==============
+cat(
+  "\n\nAnalizando número óptimo de clusters para el mejor método:",
+  best_method,
+  "\n"
+)
+
+best_hc_model <- hierarchical_models[[best_method]]
+
+# Método del codo (Within-cluster sum of squares)
+wss_values <- numeric(15)
+for (k in 2:15) {
+  clusters <- cutree(best_hc_model, k = k)
+  wss_values[k] <- sum(
+    tapply(
+      seq_along(clusters),
+      clusters,
+      function(idx) {
+        if (length(idx) > 1) {
+          sum(as.matrix(D_robust_relms)[idx, idx]^2) / (2 * length(idx))
+        } else {
+          0
+        }
+      }
+    )
+  )
+}
+
+# Plot del codo
+plot_elbow <- data.frame(
+  k = 2:15,
+  WSS = wss_values[2:15]
+) %>%
+  ggplot(aes(x = k, y = WSS)) +
+  geom_line(linewidth = 1, color = "steelblue") +
+  geom_point(size = 3, color = "steelblue") +
+  labs(
+    title = paste("Elbow Method -", toupper(best_method), "Linkage"),
+    x = "Number of Clusters (k)",
+    y = "Within-cluster Sum of Squares"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold")
+  ) +
+  scale_x_continuous(breaks = 2:15)
+
+plot_elbow
+
+# Silhouette para diferentes valores de k
+silhouette_scores <- numeric(13)
+for (k in 2:14) {
+  clusters <- cutree(best_hc_model, k = k)
+  sil <- silhouette(clusters, D_robust_relms)
+  silhouette_scores[k - 1] <- mean(sil[, 3])
+}
+
+# Plot de Silhouette
+plot_silhouette_k <- data.frame(
+  k = 2:14,
+  Silhouette = silhouette_scores
+) %>%
+  ggplot(aes(x = k, y = Silhouette)) +
+  geom_line(linewidth = 1, color = "darkgreen") +
+  geom_point(size = 3, color = "darkgreen") +
+  geom_hline(
+    yintercept = max(silhouette_scores),
+    linetype = "dashed",
+    color = "red"
+  ) +
+  annotate(
+    "text",
+    x = which.max(silhouette_scores) + 1,
+    y = max(silhouette_scores),
+    label = paste0("Max at k=", which.max(silhouette_scores) + 1),
+    vjust = -0.5,
+    color = "red"
+  ) +
+  labs(
+    title = paste(
+      "Average Silhouette Width -",
+      toupper(best_method),
+      "Linkage"
+    ),
+    x = "Number of Clusters (k)",
+    y = "Average Silhouette Width"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold")
+  ) +
+  scale_x_continuous(breaks = 2:14)
+
+plot_silhouette_k
+
+# K óptimo según Silhouette
+optimal_k <- which.max(silhouette_scores) + 1
+optimal_k <- 10
+cat("\n=== K ÓPTIMO ===\n")
+cat("Según Silhouette: k =", optimal_k, "\n")
+cat("Silhouette promedio:", round(max(silhouette_scores), 4), "\n")
+
+## ============== 9. CLUSTERING FINAL CON K ÓPTIMO ==============
+final_clusters <- cutree(best_hc_model, k = optimal_k)
+
+# Resumen de clusters
+cluster_summary <- data.frame(
+  Cluster = 1:optimal_k,
+  Size = as.numeric(table(final_clusters))
+) %>%
+  mutate(
+    Percentage = round(Size / sum(Size) * 100, 2)
+  )
+
+cat("\n=== RESUMEN DE CLUSTERS FINALES ===\n")
+print(cluster_summary)
+
+# Silhouette plot final
+final_silhouette <- silhouette(final_clusters, D_robust_relms)
+plot_final_silhouette <- fviz_silhouette(
+  final_silhouette,
+  print.summary = FALSE
+) +
+  labs(
+    title = paste0(
+      "Silhouette Plot - ",
+      toupper(best_method),
+      " Linkage (k=",
+      optimal_k,
+      ")"
+    ),
     subtitle = paste0(
-      "Variance explained: ",
-      round(eigenvalues_mds$Variance_Explained[1], 1),
-      "% (Dim1) + ",
-      round(eigenvalues_mds$Variance_Explained[2], 1),
-      "% (Dim2) = ",
-      round(sum(eigenvalues_mds$Variance_Explained[1:2]), 1),
-      "%"
-    ),
-    x = paste0(
-      "Dimension 1 (",
-      round(eigenvalues_mds$Variance_Explained[1], 1),
-      "%)"
-    ),
-    y = paste0(
-      "Dimension 2 (",
-      round(eigenvalues_mds$Variance_Explained[2], 1),
-      "%)"
+      "Average Silhouette Width: ",
+      round(mean(final_silhouette[, 3]), 3)
     )
   ) +
   theme_minimal() +
   theme(
     plot.title = element_text(hjust = 0.5, face = "bold"),
-    plot.subtitle = element_text(hjust = 0.5, size = 9)
-  ) +
-  coord_fixed()
+    plot.subtitle = element_text(hjust = 0.5)
+  )
 
-# Con colores por grupo (ejemplo: room_type)
-mds_plot_roomtype <- ggplot(
-  MDS_classic_data %>% mutate(room_type = data_airbnb_sample$room_type),
-  aes(x = V1, y = V2, color = room_type)
+plot_final_silhouette
+
+## ============== 10. VISUALIZACIÓN EN MDS ==============
+# Añadir clusters a los datos MDS
+MDS_relms_clustered <- MDS_relms_data %>%
+  mutate(Cluster = as.factor(final_clusters))
+
+# Plot MDS con clusters
+plot_mds_clusters <- ggplot(
+  MDS_relms_clustered,
+  aes(x = V1, y = V2, color = Cluster)
 ) +
   geom_point(alpha = 0.6, size = 2) +
+  stat_ellipse(level = 0.95, linewidth = 1) +
   labs(
-    title = "MDS - Colored by Room Type",
-    subtitle = paste0(
-      "Total variance: ",
-      round(sum(eigenvalues_mds$Variance_Explained[1:2]), 1),
-      "%"
+    title = paste0(
+      "Hierarchical Clustering (",
+      toupper(best_method),
+      ") - MDS Visualization"
     ),
-    x = paste0(
-      "Dimension 1 (",
-      round(eigenvalues_mds$Variance_Explained[1], 1),
-      "%)"
-    ),
-    y = paste0(
-      "Dimension 2 (",
-      round(eigenvalues_mds$Variance_Explained[2], 1),
-      "%)"
-    ),
-    color = "Room Type"
+    subtitle = paste0("k = ", optimal_k, " clusters"),
+    x = paste0("MDS Dimension 1 (", round(var_relms[1], 1), "%)"),
+    y = paste0("MDS Dimension 2 (", round(var_relms[2], 1), "%)")
   ) +
   theme_minimal() +
   theme(
-    plot.title = element_text(hjust = 0.5, face = "bold"),
-    plot.subtitle = element_text(hjust = 0.5, size = 9)
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
+    plot.subtitle = element_text(hjust = 0.5),
+    legend.position = "bottom"
   ) +
   coord_fixed()
 
-# Con colores por distrito
-mds_plot_neighbourhood <- ggplot(
-  MDS_classic_data %>%
-    mutate(
-      neighbourhood = data_airbnb_sample$neighbourhood_group_cleansed
-    ),
-  aes(x = V1, y = V2, color = neighbourhood)
-) +
-  geom_point(alpha = 0.6, size = 2) +
-  labs(
-    title = "MDS - Colored by District",
-    subtitle = paste0(
-      "Total variance: ",
-      round(sum(eigenvalues_mds$Variance_Explained[1:2]), 1),
-      "%"
-    ),
-    x = paste0(
-      "Dimension 1 (",
-      round(eigenvalues_mds$Variance_Explained[1], 1),
-      "%)"
-    ),
-    y = paste0(
-      "Dimension 2 (",
-      round(eigenvalues_mds$Variance_Explained[2], 1),
-      "%)"
-    ),
-    color = "District"
-  ) +
-  theme_minimal() +
-  theme(
-    plot.title = element_text(hjust = 0.5, face = "bold"),
-    plot.subtitle = element_text(hjust = 0.5, size = 9),
-    legend.position = "right"
-  ) +
-  coord_fixed()
+plot_mds_clusters
+
+## ============== 11. GUARDAR RESULTADOS ==============
+hierarchical_clustering_results <- list(
+  cophenetic_comparison = cophenetic_results,
+  best_method = best_method,
+  best_correlation = best_correlation,
+  optimal_k = optimal_k,
+  final_clusters = final_clusters,
+  cluster_summary = cluster_summary,
+  hierarchical_models = hierarchical_models,
+  plots = list(
+    cophenetic_comparison = plot_cophenetic_comparison,
+    dendrograms = dendrograms_list,
+    elbow = plot_elbow,
+    silhouette_k = plot_silhouette_k,
+    final_silhouette = plot_final_silhouette,
+    mds_clusters = plot_mds_clusters
+  )
+)
 
 
-## TODO: -------------------------------- MDS modificado --------------------------------------
-
-## ----------------------------------------------------------------------------------------------------------
-## -------------------------------------------------- CLUSTERING --------------------------------------------
-## ----------------------------------------------------------------------------------------------------------
+## CLUSTERING NO JERARQUICO
 
 PCA_coordinates <- pca_object$ind$coord[, 1:3] %>%
   as_data_frame() %>%
