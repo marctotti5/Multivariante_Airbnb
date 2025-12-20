@@ -20,6 +20,8 @@ library(cluster)
 library(dbrobust)
 library(DescTools)
 library(vegan)
+library(plotly)
+library(geometry) # Para calcular convex hulls
 
 ## ----------------------------------------------------------------------------------------------------------
 ## ----------------------------------------------------------------------------------------------------------
@@ -1755,844 +1757,536 @@ plot_cv_comparison
 ## ----------------------------------------------------------------------------------------------------------
 
 ## CLUSTERING JERARQUICO UTILIZANDO MATRIZ DISTANCIAS RelMS
-## ============== 1. DEFINIR MÉTODOS DE LINKAGE A COMPARAR ==============
-linkage_methods <- c(
-  "single",
-  "complete",
-  "average",
-  "ward.D2",
-  "mcquitty",
-  "median",
-  "centroid"
-)
-
-## ============== 2. CALCULAR CORRELACIÓN COFENÉTICA PARA CADA MÉTODO ==============
-cophenetic_results <- data.frame(
-  Method = linkage_methods,
-  Cophenetic_Correlation = NA_real_,
-  stringsAsFactors = FALSE
-)
-
-hierarchical_models <- list()
-
-cat("\nCalculando correlación cofenética para cada método de linkage...\n")
-
-for (i in seq_along(linkage_methods)) {
-  method <- linkage_methods[i]
-
-  cat("  Método:", method, "... ")
-
-  # Calcular clustering jerárquico
-  hc_model <- hclust(D_robust_relms, method = method)
-
-  # Calcular matriz de distancias cofenéticas
-  coph_dist <- cophenetic(hc_model)
-
-  # Calcular correlación cofenética
-  coph_cor <- cor(D_robust_relms, coph_dist)
-
-  # Guardar resultados
-  cophenetic_results$Cophenetic_Correlation[i] <- coph_cor
-  hierarchical_models[[method]] <- hc_model
-
-  cat("Correlación =", round(coph_cor, 4), "\n")
-}
-
-## ============== 3. ORDENAR Y MOSTRAR RESULTADOS ==============
-cophenetic_results <- cophenetic_results %>%
-  arrange(desc(Cophenetic_Correlation))
-
-
-## ============== 4. GRÁFICO DE COMPARACIÓN ==============
-plot_cophenetic_comparison <- ggplot(
-  cophenetic_results,
-  aes(
-    x = reorder(Method, Cophenetic_Correlation),
-    y = Cophenetic_Correlation,
-    fill = Cophenetic_Correlation
+{
+  ## ============== 1. DEFINIR MÉTODOS DE LINKAGE A COMPARAR ==============
+  linkage_methods <- c(
+    "single",
+    "complete",
+    "average",
+    "ward.D2",
+    "mcquitty",
+    "median",
+    "centroid"
   )
-) +
-  geom_col() +
-  geom_text(
-    aes(label = round(Cophenetic_Correlation, 3)),
-    hjust = -0.1,
-    size = 4
-  ) +
-  scale_fill_gradient2(
-    low = "red",
-    mid = "yellow",
-    high = "green",
-    midpoint = median(cophenetic_results$Cophenetic_Correlation),
-    name = "Correlation"
-  ) +
-  coord_flip() +
-  labs(
-    title = "Cophenetic Correlation by Linkage Method",
-    subtitle = "Higher correlation = Better representation of original distances",
-    x = "Linkage Method",
-    y = "Cophenetic Correlation"
-  ) +
-  theme_minimal() +
-  theme(
-    plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
-    plot.subtitle = element_text(hjust = 0.5, size = 10),
-    legend.position = "none"
-  ) +
-  ylim(0, 1)
 
-plot_cophenetic_comparison
+  ## ============== 2. CALCULAR CORRELACIÓN COFENÉTICA PARA CADA MÉTODO ==============
+  cophenetic_results <- data.frame(
+    Method = linkage_methods,
+    Cophenetic_Correlation = NA_real_,
+    stringsAsFactors = FALSE
+  )
 
-## ============== 5. SELECCIONAR MEJOR MÉTODO ==============
-best_method <- cophenetic_results$Method[1]
-best_correlation <- cophenetic_results$Cophenetic_Correlation[1]
+  hierarchical_models <- list()
 
-## ============== 6. DENDROGRAMAS PARA LOS TOP 3 MÉTODOS ==============
-top3_methods <- cophenetic_results$Method[1:3]
+  cat("\nCalculando correlación cofenética para cada método de linkage...\n")
 
-cat("\n\nGenerando dendrogramas para los top 3 métodos...\n")
+  for (i in seq_along(linkage_methods)) {
+    method <- linkage_methods[i]
 
-dendrograms_list <- list()
+    cat("  Método:", method, "... ")
 
-for (method in top3_methods) {
-  cat("  Generando dendrograma para:", method, "\n")
+    # Calcular clustering jerárquico
+    #hc_model <- hclust(D_robust_relms, method = method)
+    hc_model <- hclust(D_robust_ggower, method = method)
+    # Calcular matriz de distancias cofenéticas
+    coph_dist <- cophenetic(hc_model)
 
-  hc_model <- hierarchical_models[[method]]
+    # Calcular correlación cofenética
+    #coph_cor <- cor(D_robust_relms, coph_dist)
+    coph_cor <- cor(D_robust_ggower, coph_dist)
+    # Guardar resultados
+    cophenetic_results$Cophenetic_Correlation[i] <- coph_cor
+    hierarchical_models[[method]] <- hc_model
 
-  # Dendrograma básico
-  dend_plot <- fviz_dend(
-    hc_model,
-    k = 4, # Número de clusters a visualizar
-    cex = 0.5,
-    palette = "jco",
-    rect = TRUE,
-    rect_border = "jco",
-    rect_fill = TRUE,
-    main = paste0(
-      "Dendrogram - ",
-      toupper(method),
-      " Linkage\n",
-      "Cophenetic Correlation: ",
-      round(
-        cophenetic_results$Cophenetic_Correlation[
-          cophenetic_results$Method == method
-        ],
-        3
-      )
+    cat("Correlación =", round(coph_cor, 4), "\n")
+  }
+
+  ## ============== 3. ORDENAR Y MOSTRAR RESULTADOS ==============
+  cophenetic_results <- cophenetic_results %>%
+    arrange(desc(Cophenetic_Correlation))
+
+  ## ============== 4. GRÁFICO DE COMPARACIÓN ==============
+  plot_cophenetic_comparison <- ggplot(
+    cophenetic_results,
+    aes(
+      x = reorder(Method, Cophenetic_Correlation),
+      y = Cophenetic_Correlation,
+      fill = Cophenetic_Correlation
     )
   ) +
+    geom_col() +
+    geom_text(
+      aes(label = round(Cophenetic_Correlation, 3)),
+      hjust = -0.1,
+      size = 4
+    ) +
+    scale_fill_gradient2(
+      low = "red",
+      mid = "yellow",
+      high = "green",
+      midpoint = median(cophenetic_results$Cophenetic_Correlation),
+      name = "Correlation"
+    ) +
+    coord_flip() +
+    labs(
+      title = "Cophenetic Correlation by Linkage Method",
+      subtitle = "Higher correlation = Better representation of original distances",
+      x = "Linkage Method",
+      y = "Cophenetic Correlation"
+    ) +
+    theme_minimal() +
+    theme(
+      plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
+      plot.subtitle = element_text(hjust = 0.5, size = 10),
+      legend.position = "none"
+    ) +
+    ylim(0, 1)
+
+  plot_cophenetic_comparison
+
+  ## ============== 5. SELECCIONAR MEJOR MÉTODO ==============
+  best_method <- cophenetic_results$Method[1]
+  best_correlation <- cophenetic_results$Cophenetic_Correlation[1]
+
+  library(NbClust)
+  nb <- NbClust(
+    diss = D_robust_ggower,
+    distance = NULL,
+    min.nc = 2,
+    max.nc = 30,
+    method = "average",
+    index = "dunn"
+  )
+
+  fviz_nbclust(nb)
+
+  ## ============== 6. DENDROGRAMAS PARA LOS TOP 3 MÉTODOS ==============
+  top3_methods <- cophenetic_results$Method[1:3]
+
+  cat("\n\nGenerando dendrogramas para los top 3 métodos...\n")
+
+  dendrograms_list <- list()
+
+  for (method in top3_methods) {
+    cat("  Generando dendrograma para:", method, "\n")
+
+    hc_model <- hierarchical_models[[method]]
+
+    # Dendrograma básico
+    dend_plot <- fviz_dend(
+      hc_model,
+      k = 4, # Número de clusters a visualizar
+      cex = 0.5,
+      palette = "jco",
+      rect = TRUE,
+      rect_border = "jco",
+      rect_fill = TRUE,
+      main = paste0(
+        "Dendrogram - ",
+        toupper(method),
+        " Linkage\n",
+        "Cophenetic Correlation: ",
+        round(
+          cophenetic_results$Cophenetic_Correlation[
+            cophenetic_results$Method == method
+          ],
+          3
+        )
+      )
+    ) +
+      theme(
+        plot.title = element_text(hjust = 0.5, face = "bold")
+      )
+
+    dendrograms_list[[method]] <- dend_plot
+  }
+
+  ## ============== 7. MOSTRAR DENDROGRAMAS ==============
+  # Dendrograma del mejor método
+  dendrograms_list[[best_method]]
+
+  # Comparar los 3 mejores
+  gridExtra::grid.arrange(
+    dendrograms_list[[top3_methods[1]]],
+    dendrograms_list[[top3_methods[2]]],
+    dendrograms_list[[top3_methods[3]]],
+    ncol = 1
+  )
+
+  ## ============== 8. ANÁLISIS DEL MEJOR MÉTODO: DETERMINAR K ÓPTIMO ==============
+  cat(
+    "\n\nAnalizando número óptimo de clusters para el mejor método:",
+    best_method,
+    "\n"
+  )
+
+  best_hc_model <- hierarchical_models[[best_method]]
+  best_hc_model <- hierarchical_models[["complete"]]
+  best_method <- "complete"
+
+  # Método del codo (Within-cluster sum of squares)
+  wss_values <- numeric(30)
+  for (k in 2:30) {
+    clusters <- cutree(best_hc_model, k = k)
+    wss_values[k] <- sum(
+      tapply(
+        seq_along(clusters),
+        clusters,
+        function(idx) {
+          if (length(idx) > 1) {
+            sum(as.matrix(D_robust_relms)[idx, idx]^2) / (2 * length(idx))
+          } else {
+            0
+          }
+        }
+      )
+    )
+  }
+
+  # Plot del codo
+  plot_elbow <- data.frame(
+    k = 2:30,
+    WSS = wss_values[2:30]
+  ) %>%
+    ggplot(aes(x = k, y = WSS)) +
+    geom_line(linewidth = 1, color = "steelblue") +
+    geom_point(size = 3, color = "steelblue") +
+    labs(
+      title = paste("Elbow Method -", toupper(best_method), "Linkage"),
+      x = "Number of Clusters (k)",
+      y = "Within-cluster Sum of Squares"
+    ) +
+    theme_minimal() +
     theme(
       plot.title = element_text(hjust = 0.5, face = "bold")
-    )
+    ) +
+    scale_x_continuous(breaks = 2:30)
 
-  dendrograms_list[[method]] <- dend_plot
-}
+  plot_elbow
 
-## ============== 7. MOSTRAR DENDROGRAMAS ==============
-# Dendrograma del mejor método
-dendrograms_list[[best_method]]
-
-# Comparar los 3 mejores
-gridExtra::grid.arrange(
-  dendrograms_list[[top3_methods[1]]],
-  dendrograms_list[[top3_methods[2]]],
-  dendrograms_list[[top3_methods[3]]],
-  ncol = 1
-)
-
-## ============== 8. ANÁLISIS DEL MEJOR MÉTODO: DETERMINAR K ÓPTIMO ==============
-cat(
-  "\n\nAnalizando número óptimo de clusters para el mejor método:",
-  best_method,
-  "\n"
-)
-
-best_hc_model <- hierarchical_models[[best_method]]
-
-# Método del codo (Within-cluster sum of squares)
-wss_values <- numeric(15)
-for (k in 2:15) {
-  clusters <- cutree(best_hc_model, k = k)
-  wss_values[k] <- sum(
-    tapply(
-      seq_along(clusters),
-      clusters,
-      function(idx) {
-        if (length(idx) > 1) {
-          sum(as.matrix(D_robust_relms)[idx, idx]^2) / (2 * length(idx))
-        } else {
-          0
-        }
-      }
-    )
-  )
-}
-
-# Plot del codo
-plot_elbow <- data.frame(
-  k = 2:15,
-  WSS = wss_values[2:15]
-) %>%
-  ggplot(aes(x = k, y = WSS)) +
-  geom_line(linewidth = 1, color = "steelblue") +
-  geom_point(size = 3, color = "steelblue") +
-  labs(
-    title = paste("Elbow Method -", toupper(best_method), "Linkage"),
-    x = "Number of Clusters (k)",
-    y = "Within-cluster Sum of Squares"
-  ) +
-  theme_minimal() +
-  theme(
-    plot.title = element_text(hjust = 0.5, face = "bold")
-  ) +
-  scale_x_continuous(breaks = 2:15)
-
-plot_elbow
-
-# Silhouette para diferentes valores de k
-silhouette_scores <- numeric(13)
-for (k in 2:14) {
-  clusters <- cutree(best_hc_model, k = k)
-  sil <- silhouette(clusters, D_robust_relms)
-  silhouette_scores[k - 1] <- mean(sil[, 3])
-}
-
-# Plot de Silhouette
-plot_silhouette_k <- data.frame(
-  k = 2:14,
-  Silhouette = silhouette_scores
-) %>%
-  ggplot(aes(x = k, y = Silhouette)) +
-  geom_line(linewidth = 1, color = "darkgreen") +
-  geom_point(size = 3, color = "darkgreen") +
-  geom_hline(
-    yintercept = max(silhouette_scores),
-    linetype = "dashed",
-    color = "red"
-  ) +
-  annotate(
-    "text",
-    x = which.max(silhouette_scores) + 1,
-    y = max(silhouette_scores),
-    label = paste0("Max at k=", which.max(silhouette_scores) + 1),
-    vjust = -0.5,
-    color = "red"
-  ) +
-  labs(
-    title = paste(
-      "Average Silhouette Width -",
-      toupper(best_method),
-      "Linkage"
-    ),
-    x = "Number of Clusters (k)",
-    y = "Average Silhouette Width"
-  ) +
-  theme_minimal() +
-  theme(
-    plot.title = element_text(hjust = 0.5, face = "bold")
-  ) +
-  scale_x_continuous(breaks = 2:14)
-
-plot_silhouette_k
-
-# K óptimo según Silhouette
-optimal_k <- which.max(silhouette_scores) + 1
-optimal_k <- 10
-cat("\n=== K ÓPTIMO ===\n")
-cat("Según Silhouette: k =", optimal_k, "\n")
-cat("Silhouette promedio:", round(max(silhouette_scores), 4), "\n")
-
-## ============== 9. CLUSTERING FINAL CON K ÓPTIMO ==============
-final_clusters <- cutree(best_hc_model, k = optimal_k)
-
-# Resumen de clusters
-cluster_summary <- data.frame(
-  Cluster = 1:optimal_k,
-  Size = as.numeric(table(final_clusters))
-) %>%
-  mutate(
-    Percentage = round(Size / sum(Size) * 100, 2)
-  )
-
-cat("\n=== RESUMEN DE CLUSTERS FINALES ===\n")
-print(cluster_summary)
-
-# Silhouette plot final
-final_silhouette <- silhouette(final_clusters, D_robust_relms)
-plot_final_silhouette <- fviz_silhouette(
-  final_silhouette,
-  print.summary = FALSE
-) +
-  labs(
-    title = paste0(
-      "Silhouette Plot - ",
-      toupper(best_method),
-      " Linkage (k=",
-      optimal_k,
-      ")"
-    ),
-    subtitle = paste0(
-      "Average Silhouette Width: ",
-      round(mean(final_silhouette[, 3]), 3)
-    )
-  ) +
-  theme_minimal() +
-  theme(
-    plot.title = element_text(hjust = 0.5, face = "bold"),
-    plot.subtitle = element_text(hjust = 0.5)
-  )
-
-plot_final_silhouette
-
-## ============== 10. VISUALIZACIÓN EN MDS ==============
-# Añadir clusters a los datos MDS
-MDS_relms_clustered <- MDS_relms_data %>%
-  mutate(Cluster = as.factor(final_clusters))
-
-# Plot MDS con clusters
-plot_mds_clusters <- ggplot(
-  MDS_relms_clustered,
-  aes(x = V1, y = V2, color = Cluster)
-) +
-  geom_point(alpha = 0.6, size = 2) +
-  stat_ellipse(level = 0.95, linewidth = 1) +
-  labs(
-    title = paste0(
-      "Hierarchical Clustering (",
-      toupper(best_method),
-      ") - MDS Visualization"
-    ),
-    subtitle = paste0("k = ", optimal_k, " clusters"),
-    x = paste0("MDS Dimension 1 (", round(var_relms[1], 1), "%)"),
-    y = paste0("MDS Dimension 2 (", round(var_relms[2], 1), "%)")
-  ) +
-  theme_minimal() +
-  theme(
-    plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
-    plot.subtitle = element_text(hjust = 0.5),
-    legend.position = "bottom"
-  ) +
-  coord_fixed()
-
-plot_mds_clusters
-
-## ============== 11. GUARDAR RESULTADOS ==============
-hierarchical_clustering_results <- list(
-  cophenetic_comparison = cophenetic_results,
-  best_method = best_method,
-  best_correlation = best_correlation,
-  optimal_k = optimal_k,
-  final_clusters = final_clusters,
-  cluster_summary = cluster_summary,
-  hierarchical_models = hierarchical_models,
-  plots = list(
-    cophenetic_comparison = plot_cophenetic_comparison,
-    dendrograms = dendrograms_list,
-    elbow = plot_elbow,
-    silhouette_k = plot_silhouette_k,
-    final_silhouette = plot_final_silhouette,
-    mds_clusters = plot_mds_clusters
-  )
-)
-
-
-## CLUSTERING NO JERARQUICO
-
-PCA_coordinates <- pca_object$ind$coord[, 1:3] %>%
-  as_data_frame() %>%
-  rename(
-    "PC1" = "Dim.1",
-    "PC2" = "Dim.2",
-    "PC3" = "Dim.3",
-  )
-PCA_variables <- colnames(PCA_coordinates)
-
-data_clustering_PCA <- PCA_coordinates
-
-
-library(biotools)
-library(fpc)
-mahalanobis_dist <- D2.dist(data_clustering_PCA, var(data_clustering_PCA)) %>%
-  sqrt()
-
-compare_clustering_methods <- function(
-  data_original = data_airbnb_sample, # Dataset original (con variables mixtas)
-  data_pca = data_clustering_PCA, # Coordenadas PCA (ya calculadas)
-  data_mds, # Coordenadas MDS (ya calculadas)
-  k_values = 2:6, # Valores de k a probar
-  B = 1000, # Iteraciones bootstrap
-  seed = 1234,
-  compute_bootstrap = TRUE
-) {
-  set.seed(seed)
-  library(biotools)
-  library(fpc)
-
-  # Inicializar lista de resultados
-  resultados <- list()
-  resumen_tabla <- list()
-
-  # ============== DISTANCIAS ==============
-  cat("Calculando matrices de distancias...\n")
-
-  # 1. Distancia de Gower (variables originales - mixtas)
-  cat("  Calculando distancia de Gower...\n")
-  D_gower <- daisy(data_original, metric = "gower")
-
-  # 2. Distancia Euclidiana (PCA)
-  cat("  Calculando distancia Euclidiana (PCA)...\n")
-  D_euclidean_pca <- dist(data_pca, method = "euclidean")
-
-  # 3. Distancia Euclidiana (MDS)
-  cat("  Calculando distancia Euclidiana (MDS)...\n")
-  D_euclidean_mds <- dist(data_mds, method = "euclidean")
-
-  # 4. Distancia de Mahalanobis (PCA)
-  cat("  Calculando distancia de Mahalanobis (PCA)...\n")
-  D_mahalanobis_pca <- D2.dist(
-    data_pca,
-    cov = var(data_pca)
-  ) %>%
-    sqrt()
-
-  # 5. Distancia de Mahalanobis (MDS)
-  cat("  Calculando distancia de Mahalanobis (MDS)...\n")
-  D_mahalanobis_mds <- D2.dist(
-    data_mds,
-    cov = var(data_mds)
-  ) %>%
-    sqrt()
-
-  # Lista de configuraciones a probar
-  configuraciones <- list(
-    # Original + Gower solo con PAM (K-means no funciona con Gower)
-    list(
-      name = "Original + Gower",
-      dist = D_gower,
-      type = "gower",
-      data = NULL,
-      methods = c("PAM")
-    ),
-    # PCA con ambas distancias y ambos métodos
-    list(
-      name = "PCA + Euclidean",
-      dist = D_euclidean_pca,
-      type = "euclidean",
-      data = data_pca,
-      methods = c("PAM", "K-means")
-    ),
-    list(
-      name = "PCA + Mahalanobis",
-      dist = D_mahalanobis_pca,
-      type = "mahalanobis",
-      data = data_pca,
-      methods = c("PAM")
-    ),
-    # MDS con ambas distancias y ambos métodos
-    list(
-      name = "MDS + Euclidean",
-      dist = D_euclidean_mds,
-      type = "euclidean",
-      data = data_mds,
-      methods = c("PAM", "K-means")
-    ),
-    list(
-      name = "MDS + Mahalanobis",
-      dist = D_mahalanobis_mds,
-      type = "mahalanobis",
-      data = data_mds,
-      methods = c("PAM")
-    )
-  )
-
-  # ============== CLUSTERING ==============
-  for (config in configuraciones) {
-    for (clust_method in config$methods) {
-      for (k_val in k_values) {
-        cat("\n===========================\n")
-        cat(
-          "Método:",
-          config$name,
-          "-",
-          clust_method,
-          "- k =",
-          k_val,
-          "\n"
-        )
-
-        # Aplicar clustering según el método
-        if (clust_method == "PAM") {
-          # PAM clustering
-          model <- pam(config$dist, k = k_val)
-          clustering_result <- model$clustering
-        } else if (clust_method == "K-means") {
-          # K-means clustering (requiere datos, no distancias)
-          model <- kmeans(config$data, centers = k_val, nstart = 25)
-          clustering_result <- model$cluster
-        }
-
-        # Silhouette
-        silhouette_obj <- silhouette(clustering_result, config$dist)
-        sil_mean <- mean(silhouette_obj[, 3])
-
-        # Silhouette plot
-        sil_plot <- fviz_silhouette(
-          silhouette_obj,
-          print.summary = FALSE
-        ) +
-          labs(title = paste(config$name, "-", clust_method, "- k =", k_val))
-
-        # Calinski-Harabasz
-        ch_index <- cluster.stats(
-          config$dist,
-          clustering_result
-        )$ch
-
-        # Bootstrap (opcional)
-        if (compute_bootstrap) {
-          cat("Ejecutando bootstrap...\n")
-
-          if (clust_method == "PAM") {
-            boot_result <- clusterboot(
-              data = config$dist,
-              B = B,
-              clustermethod = pamkCBI,
-              k = k_val,
-              seed = seed
-            )
-          } else if (clust_method == "K-means") {
-            boot_result <- clusterboot(
-              data = config$data,
-              B = B,
-              clustermethod = kmeansCBI,
-              krange = k_val,
-              seed = seed
-            )
-          }
-
-          jaccard <- boot_result$bootmean
-          jaccard_mean <- mean(jaccard)
-          jaccard_min <- min(jaccard)
-          jaccard_max <- max(jaccard)
-        } else {
-          jaccard <- NA
-          jaccard_mean <- NA
-          jaccard_min <- NA
-          jaccard_max <- NA
-        }
-
-        # Tamaños de clusters
-        sizes <- table(clustering_result)
-        sizes_str <- paste(sizes, collapse = "-")
-
-        # Guardar resultados
-        key <- paste0(
-          gsub(" ", "_", gsub("\\+", "", tolower(config$name))),
-          "_",
-          tolower(clust_method),
-          "_k",
-          k_val
-        )
-
-        resultados[[key]] <- list(
-          metodo = config$name,
-          clustering_method = clust_method,
-          k = k_val,
-          distance_type = config$type,
-          cluster = clustering_result,
-          silhouette = sil_mean,
-          ch_index = ch_index,
-          jaccard_mean = jaccard_mean,
-          jaccard_clusters = jaccard,
-          jaccard_min = jaccard_min,
-          jaccard_max = jaccard_max,
-          cluster_sizes = sizes,
-          silhouette_plot = sil_plot,
-          model = model
-        )
-
-        # Agregar a tabla resumen
-        resumen_tabla[[length(resumen_tabla) + 1]] <- tibble(
-          metodo = config$name,
-          clustering_method = clust_method,
-          distance = config$type,
-          k = k_val,
-          silhouette = sil_mean,
-          ch_index = ch_index,
-          jaccard_mean = jaccard_mean,
-          jaccard_min = jaccard_min,
-          jaccard_max = jaccard_max,
-          cluster_sizes = sizes_str
-        )
-      }
-    }
+  # Silhouette para diferentes valores de k
+  silhouette_scores <- numeric(28)
+  for (k in 2:30) {
+    clusters <- cutree(best_hc_model, k = k)
+    sil <- silhouette(clusters, D_robust_relms)
+    silhouette_scores[k - 1] <- mean(sil[, 3])
   }
 
-  # Convertir resumen a dataframe
-  resumen_df <- bind_rows(resumen_tabla) %>%
-    arrange(desc(silhouette))
-
-  # Crear gráficos comparativos
-  plot_silhouette <- ggplot(
-    resumen_df,
-    aes(
-      x = factor(k),
-      y = silhouette,
-      color = paste(metodo, clustering_method),
-      group = paste(metodo, clustering_method)
-    )
-  ) +
-    geom_line(linewidth = 1) +
-    geom_point(size = 3) +
+  # Plot de Silhouette
+  plot_silhouette_k <- data.frame(
+    k = 2:30,
+    Silhouette = silhouette_scores
+  ) %>%
+    ggplot(aes(x = k, y = Silhouette)) +
+    geom_line(linewidth = 1, color = "darkgreen") +
+    geom_point(size = 3, color = "darkgreen") +
+    geom_hline(
+      yintercept = max(silhouette_scores),
+      linetype = "dashed",
+      color = "red"
+    ) +
+    annotate(
+      "text",
+      x = which.max(silhouette_scores) + 1,
+      y = max(silhouette_scores),
+      label = paste0("Max at k=", which.max(silhouette_scores) + 1),
+      vjust = -0.5,
+      color = "red"
+    ) +
     labs(
-      title = "Silhouette Coefficient by Method and k",
+      title = paste(
+        "Average Silhouette Width -",
+        toupper(best_method),
+        "Linkage"
+      ),
       x = "Number of Clusters (k)",
-      y = "Average Silhouette",
-      color = "Method"
+      y = "Average Silhouette Width"
     ) +
     theme_minimal() +
     theme(
-      legend.position = "bottom",
-      legend.text = element_text(size = 8)
+      plot.title = element_text(hjust = 0.5, face = "bold")
+    ) +
+    scale_x_continuous(breaks = 2:30)
+
+  plot_silhouette_k
+
+  # K óptimo según Silhouette
+  optimal_k <- which.max(silhouette_scores) + 1
+  optimal_k <- 23
+  cat("\n=== K ÓPTIMO ===\n")
+  cat("Según Silhouette: k =", optimal_k, "\n")
+  cat("Silhouette promedio:", round(max(silhouette_scores), 4), "\n")
+
+  ## ============== 9. CLUSTERING FINAL CON K ÓPTIMO ==============
+  final_clusters <- cutree(best_hc_model, k = optimal_k)
+
+  # Resumen de clusters
+  cluster_summary <- data.frame(
+    Cluster = 1:optimal_k,
+    Size = as.numeric(table(final_clusters))
+  ) %>%
+    mutate(
+      Percentage = round(Size / sum(Size) * 100, 2)
     )
 
-  plot_ch <- ggplot(
-    resumen_df,
-    aes(
-      x = factor(k),
-      y = ch_index,
-      color = paste(metodo, clustering_method),
-      group = paste(metodo, clustering_method)
-    )
+  cat("\n=== RESUMEN DE CLUSTERS FINALES ===\n")
+  print(cluster_summary)
+
+  # Silhouette plot final
+  final_silhouette <- silhouette(final_clusters, D_robust_relms)
+  plot_final_silhouette <- fviz_silhouette(
+    final_silhouette,
+    print.summary = FALSE
   ) +
-    geom_line(linewidth = 1) +
-    geom_point(size = 3) +
     labs(
-      title = "Calinski-Harabasz Index by Method and k",
-      x = "Number of Clusters (k)",
-      y = "CH Index",
-      color = "Method"
+      title = paste0(
+        "Silhouette Plot - ",
+        toupper(best_method),
+        " Linkage (k=",
+        optimal_k,
+        ")"
+      ),
+      subtitle = paste0(
+        "Average Silhouette Width: ",
+        round(mean(final_silhouette[, 3]), 3)
+      )
     ) +
     theme_minimal() +
     theme(
-      legend.position = "bottom",
-      legend.text = element_text(size = 8)
+      plot.title = element_text(hjust = 0.5, face = "bold"),
+      plot.subtitle = element_text(hjust = 0.5)
     )
 
-  if (compute_bootstrap) {
-    plot_jaccard <- ggplot(
-      resumen_df %>% filter(!is.na(jaccard_mean)),
-      aes(
-        x = factor(k),
-        y = jaccard_mean,
-        color = paste(metodo, clustering_method),
-        group = paste(metodo, clustering_method)
-      )
+  plot_final_silhouette
+
+  ## ============== 10. VISUALIZACIÓN EN MDS ==============
+  # Añadir clusters a los datos MDS
+  MDS_relms_clustered <- MDS_relms_data %>%
+    mutate(Cluster = as.factor(final_clusters))
+
+  # Plot MDS con clusters
+  plot_mds_clusters <- ggplot(
+    MDS_relms_clustered,
+    aes(x = V1, y = V2, color = Cluster)
+  ) +
+    geom_point(alpha = 0.6, size = 2) +
+    stat_ellipse(level = 0.95, linewidth = 1) +
+    labs(
+      title = paste0(
+        "Hierarchical Clustering (",
+        toupper(best_method),
+        ") - MDS Visualization"
+      ),
+      subtitle = paste0("k = ", optimal_k, " clusters"),
+      x = paste0("MDS Dimension 1 (", round(var_relms[1], 1), "%)"),
+      y = paste0("MDS Dimension 2 (", round(var_relms[2], 1), "%)")
     ) +
-      geom_line(linewidth = 1) +
-      geom_point(size = 3) +
-      geom_errorbar(
-        aes(ymin = jaccard_min, ymax = jaccard_max),
-        width = 0.2,
-        alpha = 0.5
-      ) +
-      labs(
-        title = "Bootstrap Stability (Jaccard) by Method and k",
-        x = "Number of Clusters (k)",
-        y = "Mean Jaccard Coefficient",
-        color = "Method"
-      ) +
-      theme_minimal() +
-      theme(
-        legend.position = "bottom",
-        legend.text = element_text(size = 8)
-      )
-  } else {
-    plot_jaccard <- NULL
-  }
+    theme_minimal() +
+    theme(
+      plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
+      plot.subtitle = element_text(hjust = 0.5),
+      legend.position = "bottom"
+    ) +
+    coord_fixed()
 
-  # Retornar resultados
-  return(list(
-    resultados = resultados,
-    resumen = resumen_df,
-    plot_silhouette = plot_silhouette,
-    plot_ch = plot_ch,
-    plot_jaccard = plot_jaccard,
-    distances = list(
-      gower = D_gower,
-      euclidean_pca = D_euclidean_pca,
-      euclidean_mds = D_euclidean_mds,
-      mahalanobis_pca = D_mahalanobis_pca,
-      mahalanobis_mds = D_mahalanobis_mds
+  plot_mds_clusters
+
+  ## ============== 11. GUARDAR RESULTADOS ==============
+  hierarchical_clustering_results <- list(
+    cophenetic_comparison = cophenetic_results,
+    best_method = best_method,
+    best_correlation = best_correlation,
+    optimal_k = optimal_k,
+    final_clusters = final_clusters,
+    cluster_summary = cluster_summary,
+    hierarchical_models = hierarchical_models,
+    plots = list(
+      cophenetic_comparison = plot_cophenetic_comparison,
+      dendrograms = dendrograms_list,
+      elbow = plot_elbow,
+      silhouette_k = plot_silhouette_k,
+      final_silhouette = plot_final_silhouette,
+      mds_clusters = plot_mds_clusters
     )
+  )
+}
+
+
+## CLUSTERING NO JERARQUICO (NEW)
+
+## ============== 0. PREPARAR DATOS CON CRITERIO DE VARIANZA ==============
+
+# Umbral de varianza explicada acumulada
+variance_threshold <- 70 # Puedes cambiar este valor (50, 60, 70, etc.)
+
+cat("Criterio de selección de componentes:\n")
+cat("  Varianza explicada acumulada ≥", variance_threshold, "%\n\n")
+
+## -------- PCA: Selección de componentes --------
+# Varianza explicada por cada PC
+pca_variance <- pca_object$eig[, "percentage of variance"]
+pca_cumulative <- cumsum(pca_variance)
+
+# Número de PCs necesarios para alcanzar el umbral
+n_pcs <- which(pca_cumulative >= variance_threshold)[1]
+
+cat("=== PCA ===\n")
+cat("Componentes seleccionadas:", n_pcs, "\n")
+cat("Varianza explicada acumulada:", round(pca_cumulative[n_pcs], 2), "%\n")
+cat("Detalle por componente:\n")
+for (i in 1:n_pcs) {
+  cat(sprintf(
+    "  PC%d: %.2f%% (Acum: %.2f%%)\n",
+    i,
+    pca_variance[i],
+    pca_cumulative[i]
   ))
 }
 
-clustering_comparison <- compare_clustering_methods(
-  data_original = data_airbnb_sample %>% dplyr::select(-id),
-  data_pca = PCA_coordinates,
-  data_mds = MDS_classic_data[, 1:3],
-  k_values = 2:10,
-  B = 100,
-  seed = 1234,
-  compute_bootstrap = TRUE # Cambiar a TRUE para bootstrap completo
+# Extraer coordenadas PCA y CONVERTIR A DATA.FRAME ESTÁNDAR
+PCA_coordinates <- pca_object$ind$coord[, 1:n_pcs] %>%
+  as.data.frame() # ← CAMBIO AQUÍ: as.data.frame() en lugar de as_data_frame()
+
+colnames(PCA_coordinates) <- paste0("PC", 1:n_pcs)
+
+## -------- MDS: Selección de dimensiones --------
+# Varianza explicada por cada dimensión MDS (ya calculada previamente)
+mds_cumulative_ggower <- cumsum(var_ggower)
+mds_cumulative_relms <- cumsum(var_relms)
+
+# Número de dimensiones necesarias para G-Gower
+n_mds_ggower <- which(mds_cumulative_ggower >= variance_threshold)[1]
+
+# Número de dimensiones necesarias para RelMS
+n_mds_relms <- which(mds_cumulative_relms >= variance_threshold)[1]
+
+cat("\n=== MDS G-Gower ===\n")
+cat("Dimensiones seleccionadas:", n_mds_ggower, "\n")
+cat(
+  "Varianza explicada acumulada:",
+  round(mds_cumulative_ggower[n_mds_ggower], 2),
+  "%\n"
+)
+cat("Detalle por dimensión:\n")
+for (i in 1:n_mds_ggower) {
+  cat(sprintf(
+    "  Dim%d: %.2f%% (Acum: %.2f%%)\n",
+    i,
+    var_ggower[i],
+    mds_cumulative_ggower[i]
+  ))
+}
+
+cat("\n=== MDS RelMS ===\n")
+cat("Dimensiones seleccionadas:", n_mds_relms, "\n")
+cat(
+  "Varianza explicada acumulada:",
+  round(mds_cumulative_relms[n_mds_relms], 2),
+  "%\n"
+)
+cat("Detalle por dimensión:\n")
+for (i in 1:n_mds_relms) {
+  cat(sprintf(
+    "  Dim%d: %.2f%% (Acum: %.2f%%)\n",
+    i,
+    var_relms[i],
+    mds_cumulative_relms[i]
+  ))
+}
+
+# Usar el MDS con más componentes
+n_mds <- max(n_mds_ggower, n_mds_relms)
+cat(
+  "\n>>> Usando",
+  n_mds,
+  "dimensiones MDS (máximo entre G-Gower y RelMS)\n"
 )
 
-# Ver gráficos comparativos
-clustering_comparison$plot_silhouette
-clustering_comparison$plot_ch
+# Extraer coordenadas MDS y CONVERTIR A DATA.FRAME ESTÁNDAR
+MDS_coordinates <- MDS_relms_data[, 1:n_mds] %>%
+  as.data.frame() # ← CAMBIO AQUÍ: as.data.frame() en lugar de tibble
 
-# Mejor configuración por Silhouette
-best_silhouette <- clustering_comparison$resumen %>%
-  arrange(desc(silhouette)) %>%
-  head(5)
+colnames(MDS_coordinates) <- paste0("MDS", 1:n_mds)
 
-cat("\n=== Top 5 configuraciones por Silhouette ===\n")
-print(best_silhouette)
-
-# Mejor configuración por CH Index
-best_ch <- clustering_comparison$resumen %>%
-  arrange(desc(ch_index))
-
-
-##
+## ============== 1. FUNCIÓN DE COMPARACIÓN (SIN CAMBIOS) ==============
 compare_clustering_methods <- function(
-  data_original = data_airbnb_sample, # Dataset original (con variables mixtas)
-  data_pca = data_clustering_PCA, # Coordenadas PCA (ya calculadas)
-  data_mds, # Coordenadas MDS (ya calculadas)
-  k_values = 2:6, # Valores de k a probar
-  B = 1000, # Iteraciones bootstrap
-  seed = 1234,
-  compute_bootstrap = TRUE,
-  save_plots = FALSE, # Nuevo parámetro para guardar plots
-  plots_dir = "./plots" # Directorio donde guardar los plots
+  data_pca,
+  data_mds,
+  k_values = 2:15,
+  seed = 123
 ) {
   set.seed(seed)
-  library(biotools)
-  library(fpc)
 
-  # Crear directorio para plots si se solicita guardarlos
-  if (save_plots && !dir.exists(plots_dir)) {
-    dir.create(plots_dir, recursive = TRUE)
-    cat("Directorio creado:", plots_dir, "\n")
-  }
+  # Calcular distancias
+  cat("\nCalculando matrices de distancias...\n")
+  D_pca <- dist(data_pca, method = "euclidean")
+  D_mds <- dist(data_mds, method = "euclidean")
 
-  # Inicializar lista de resultados
+  # Listas para guardar resultados
   resultados <- list()
   resumen_tabla <- list()
 
-  # ============== DISTANCIAS ==============
-  cat("Calculando matrices de distancias...\n")
-
-  # 1. Distancia de Gower (variables originales - mixtas)
-  cat("  Calculando distancia de Gower...\n")
-  D_gower <- daisy(data_original, metric = "gower")
-
-  # 2. Distancia Euclidiana (PCA)
-  cat("  Calculando distancia Euclidiana (PCA)...\n")
-  D_euclidean_pca <- dist(data_pca, method = "euclidean")
-
-  # 3. Distancia Euclidiana (MDS)
-  cat("  Calculando distancia Euclidiana (MDS)...\n")
-  D_euclidean_mds <- dist(data_mds, method = "euclidean")
-
-  # 4. Distancia de Mahalanobis (PCA)
-  cat("  Calculando distancia de Mahalanobis (PCA)...\n")
-  D_mahalanobis_pca <- D2.dist(
-    data_pca,
-    cov = var(data_pca)
-  ) %>%
-    sqrt()
-
-  # 5. Distancia de Mahalanobis (MDS)
-  cat("  Calculando distancia de Mahalanobis (MDS)...\n")
-  D_mahalanobis_mds <- D2.dist(
-    data_mds,
-    cov = var(data_mds)
-  ) %>%
-    sqrt()
-
-  # Lista de configuraciones a probar
+  # Configuraciones a probar
   configuraciones <- list(
-    # Original + Gower solo con PAM (K-means no funciona con Gower)
     list(
-      name = "Original + Gower",
-      dist = D_gower,
-      type = "gower",
-      data = NULL,
-      methods = c("PAM")
-    ),
-    # PCA con ambas distancias y ambos métodos
-    list(
-      name = "PCA + Euclidean",
-      dist = D_euclidean_pca,
-      type = "euclidean",
+      name = "PCA",
       data = data_pca,
+      dist = D_pca,
       methods = c("PAM", "K-means")
     ),
     list(
-      name = "PCA + Mahalanobis",
-      dist = D_mahalanobis_pca,
-      type = "mahalanobis",
-      data = data_pca,
-      methods = c("PAM")
-    ),
-    # MDS con ambas distancias y ambos métodos
-    list(
-      name = "MDS + Euclidean",
-      dist = D_euclidean_mds,
-      type = "euclidean",
+      name = "MDS",
       data = data_mds,
+      dist = D_mds,
       methods = c("PAM", "K-means")
-    ),
-    list(
-      name = "MDS + Mahalanobis",
-      dist = D_mahalanobis_mds,
-      type = "mahalanobis",
-      data = data_mds,
-      methods = c("PAM")
     )
   )
 
-  # ============== CLUSTERING ==============
+  ## ============== 2. CLUSTERING PARA CADA CONFIGURACIÓN ==============
   for (config in configuraciones) {
-    for (clust_method in config$methods) {
-      for (k_val in k_values) {
-        cat("\n===========================\n")
-        cat(
-          "Método:",
-          config$name,
-          "-",
-          clust_method,
-          "- k =",
-          k_val,
-          "\n"
-        )
+    for (method in config$methods) {
+      for (k in k_values) {
+        cat(sprintf("\n>>> %s + %s (k=%d)\n", config$name, method, k))
 
-        # Aplicar clustering según el método
-        if (clust_method == "PAM") {
-          # PAM clustering
-          model <- pam(config$dist, k = k_val)
-          clustering_result <- model$clustering
-        } else if (clust_method == "K-means") {
-          # K-means clustering (requiere datos, no distancias)
-          model <- kmeans(config$data, centers = k_val, nstart = 25)
-          clustering_result <- model$cluster
+        # Aplicar clustering
+        if (method == "PAM") {
+          model <- pam(config$dist, k = k)
+          clusters <- model$clustering
+        } else {
+          # K-means
+          model <- kmeans(config$data, centers = k, nstart = 25)
+          clusters <- model$cluster
         }
 
-        # Silhouette
-        silhouette_obj <- silhouette(clustering_result, config$dist)
-        sil_mean <- mean(silhouette_obj[, 3])
+        # Métricas de calidad
+        ## Silhouette
+        sil_obj <- silhouette(clusters, config$dist)
+        sil_mean <- mean(sil_obj[, 3])
+
+        ## Calinski-Harabasz
+        ch_index <- cluster.stats(config$dist, clusters)$ch
+
+        ## Dunn Index
+        dunn_index <- cluster.stats(config$dist, clusters)$dunn
+
+        ## Within-cluster sum of squares
+        wss <- sum(cluster.stats(config$dist, clusters)$within.cluster.ss)
+
+        # Tamaños de clusters
+        sizes <- table(clusters)
+        sizes_str <- paste(sizes, collapse = "-")
+
+        # Balance de clusters (coef. variación de tamaños)
+        cv_sizes <- sd(as.numeric(sizes)) / mean(as.numeric(sizes))
 
         # Silhouette plot
-        sil_plot <- fviz_silhouette(
-          silhouette_obj,
-          print.summary = FALSE
-        ) +
+        sil_plot <- fviz_silhouette(sil_obj, print.summary = FALSE) +
           labs(
-            title = paste(config$name, "-", clust_method, "- k =", k_val),
-            subtitle = paste0(
-              "Average Silhouette Width: ",
-              round(sil_mean, 3)
+            title = sprintf("%s + %s (k=%d)", config$name, method, k),
+            subtitle = sprintf(
+              "Avg Silhouette: %.3f | CH: %.1f",
+              sil_mean,
+              ch_index
             )
           ) +
           theme_minimal() +
@@ -2601,281 +2295,1120 @@ compare_clustering_methods <- function(
             plot.subtitle = element_text(hjust = 0.5)
           )
 
-        # Calinski-Harabasz
-        ch_index <- cluster.stats(
-          config$dist,
-          clustering_result
-        )$ch
-
-        # Bootstrap (opcional)
-        if (compute_bootstrap) {
-          cat("Ejecutando bootstrap...\n")
-
-          if (clust_method == "PAM") {
-            boot_result <- clusterboot(
-              data = config$dist,
-              B = B,
-              clustermethod = pamkCBI,
-              k = k_val,
-              seed = seed
-            )
-          } else if (clust_method == "K-means") {
-            boot_result <- clusterboot(
-              data = config$data,
-              B = B,
-              clustermethod = kmeansCBI,
-              krange = k_val,
-              seed = seed
-            )
-          }
-
-          jaccard <- boot_result$bootmean
-          jaccard_mean <- mean(jaccard)
-          jaccard_min <- min(jaccard)
-          jaccard_max <- max(jaccard)
-        } else {
-          jaccard <- NA
-          jaccard_mean <- NA
-          jaccard_min <- NA
-          jaccard_max <- NA
-        }
-
-        # Tamaños de clusters
-        sizes <- table(clustering_result)
-        sizes_str <- paste(sizes, collapse = "-")
-
-        # Crear key para guardar
-        key <- paste0(
-          gsub(" ", "_", gsub("\\+", "", tolower(config$name))),
-          "_",
-          tolower(clust_method),
-          "_k",
-          k_val
+        # Guardar resultados
+        key <- sprintf(
+          "%s_%s_k%d",
+          tolower(config$name),
+          tolower(gsub("-", "", method)),
+          k
         )
 
-        # Guardar plot si se solicita
-        if (save_plots) {
-          plot_filename <- file.path(
-            plots_dir,
-            paste0("silhouette_", key, ".png")
-          )
-          ggsave(
-            filename = plot_filename,
-            plot = sil_plot,
-            width = 10,
-            height = 6,
-            dpi = 300
-          )
-          cat("  Plot guardado:", plot_filename, "\n")
-        }
-
-        # Guardar resultados
         resultados[[key]] <- list(
-          metodo = config$name,
-          clustering_method = clust_method,
-          k = k_val,
-          distance_type = config$type,
-          cluster = clustering_result,
+          space = config$name,
+          method = method,
+          k = k,
+          clusters = clusters,
           silhouette = sil_mean,
           ch_index = ch_index,
-          jaccard_mean = jaccard_mean,
-          jaccard_clusters = jaccard,
-          jaccard_min = jaccard_min,
-          jaccard_max = jaccard_max,
+          dunn_index = dunn_index,
+          wss = wss,
           cluster_sizes = sizes,
+          cv_sizes = cv_sizes,
           silhouette_plot = sil_plot,
           model = model
         )
 
         # Agregar a tabla resumen
         resumen_tabla[[length(resumen_tabla) + 1]] <- tibble(
-          metodo = config$name,
-          clustering_method = clust_method,
-          distance = config$type,
-          k = k_val,
-          silhouette = sil_mean,
-          ch_index = ch_index,
-          jaccard_mean = jaccard_mean,
-          jaccard_min = jaccard_min,
-          jaccard_max = jaccard_max,
-          cluster_sizes = sizes_str
+          Space = config$name,
+          Method = method,
+          k = k,
+          Silhouette = round(sil_mean, 4),
+          CH_Index = round(ch_index, 2),
+          Dunn_Index = round(dunn_index, 4),
+          WSS = round(wss, 2),
+          CV_Sizes = round(cv_sizes, 3),
+          Cluster_Sizes = sizes_str
         )
       }
     }
   }
 
-  # Convertir resumen a dataframe
+  # Convertir a dataframe y ordenar
   resumen_df <- bind_rows(resumen_tabla) %>%
-    arrange(desc(silhouette))
+    mutate(
+      Config = paste(Space, Method, sep = " + "),
+      # Puntaje combinado (normalizado 0-1)
+      Score = ((Silhouette - min(Silhouette)) /
+        (max(Silhouette) - min(Silhouette)) *
+        0.4 +
+        (CH_Index - min(CH_Index)) / (max(CH_Index) - min(CH_Index)) * 0.3 +
+        (Dunn_Index - min(Dunn_Index)) /
+          (max(Dunn_Index) - min(Dunn_Index)) *
+          0.2 +
+        (1 - CV_Sizes / max(CV_Sizes)) * 0.1)
+    ) %>%
+    arrange(desc(Score))
 
-  # Crear gráficos comparativos
+  ## ============== 3. GRÁFICOS COMPARATIVOS ==============
+
+  # Silhouette vs k
   plot_silhouette <- ggplot(
     resumen_df,
-    aes(
-      x = factor(k),
-      y = silhouette,
-      color = paste(metodo, clustering_method),
-      group = paste(metodo, clustering_method)
-    )
+    aes(x = k, y = Silhouette, color = Config, group = Config)
   ) +
-    geom_line(linewidth = 1) +
+    geom_line(linewidth = 1.2) +
     geom_point(size = 3) +
     labs(
-      title = "Silhouette Coefficient by Method and k",
+      title = "Average Silhouette Width by Method and k",
       x = "Number of Clusters (k)",
-      y = "Average Silhouette",
-      color = "Method"
+      y = "Average Silhouette Width",
+      color = "Configuration"
     ) +
     theme_minimal() +
     theme(
-      legend.position = "bottom",
-      legend.text = element_text(size = 8)
-    )
+      plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
+      legend.position = "bottom"
+    ) +
+    scale_x_continuous(breaks = k_values)
 
+  # Calinski-Harabasz vs k
   plot_ch <- ggplot(
     resumen_df,
-    aes(
-      x = factor(k),
-      y = ch_index,
-      color = paste(metodo, clustering_method),
-      group = paste(metodo, clustering_method)
-    )
+    aes(x = k, y = CH_Index, color = Config, group = Config)
   ) +
-    geom_line(linewidth = 1) +
+    geom_line(linewidth = 1.2) +
     geom_point(size = 3) +
     labs(
       title = "Calinski-Harabasz Index by Method and k",
       x = "Number of Clusters (k)",
       y = "CH Index",
-      color = "Method"
+      color = "Configuration"
     ) +
     theme_minimal() +
     theme(
-      legend.position = "bottom",
-      legend.text = element_text(size = 8)
-    )
-
-  if (compute_bootstrap) {
-    plot_jaccard <- ggplot(
-      resumen_df %>% filter(!is.na(jaccard_mean)),
-      aes(
-        x = factor(k),
-        y = jaccard_mean,
-        color = paste(metodo, clustering_method),
-        group = paste(metodo, clustering_method)
-      )
+      plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
+      legend.position = "bottom"
     ) +
-      geom_line(linewidth = 1) +
-      geom_point(size = 3) +
-      geom_errorbar(
-        aes(ymin = jaccard_min, ymax = jaccard_max),
-        width = 0.2,
-        alpha = 0.5
-      ) +
-      labs(
-        title = "Bootstrap Stability (Jaccard) by Method and k",
-        x = "Number of Clusters (k)",
-        y = "Mean Jaccard Coefficient",
-        color = "Method"
-      ) +
-      theme_minimal() +
-      theme(
-        legend.position = "bottom",
-        legend.text = element_text(size = 8)
-      )
-  } else {
-    plot_jaccard <- NULL
-  }
+    scale_x_continuous(breaks = k_values)
 
-  # Función helper para extraer plots
-  get_silhouette_plot <- function(metodo, clustering_method, k) {
-    key <- paste0(
-      gsub(" ", "_", gsub("\\+", "", tolower(metodo))),
-      "_",
-      tolower(clustering_method),
-      "_k",
-      k
+  # Dunn Index vs k
+  plot_dunn <- ggplot(
+    resumen_df,
+    aes(x = k, y = Dunn_Index, color = Config, group = Config)
+  ) +
+    geom_line(linewidth = 1.2) +
+    geom_point(size = 3) +
+    labs(
+      title = "Dunn Index by Method and k",
+      x = "Number of Clusters (k)",
+      y = "Dunn Index",
+      color = "Configuration"
+    ) +
+    theme_minimal() +
+    theme(
+      plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
+      legend.position = "bottom"
+    ) +
+    scale_x_continuous(breaks = k_values)
+
+  # Heatmap de métricas
+  heatmap_data <- resumen_df %>%
+    select(Config, k, Silhouette, CH_Index, Dunn_Index) %>%
+    pivot_longer(
+      cols = c(Silhouette, CH_Index, Dunn_Index),
+      names_to = "Metric",
+      values_to = "Value"
+    ) %>%
+    group_by(Metric) %>%
+    mutate(
+      Value_Normalized = (Value - min(Value)) / (max(Value) - min(Value))
+    ) %>%
+    ungroup()
+
+  plot_heatmap <- ggplot(
+    heatmap_data,
+    aes(x = factor(k), y = Config, fill = Value_Normalized)
+  ) +
+    geom_tile(color = "white") +
+    geom_text(aes(label = round(Value, 2)), color = "black", size = 2.5) +
+    scale_fill_gradient2(
+      low = "red",
+      mid = "yellow",
+      high = "green",
+      midpoint = 0.5,
+      name = "Normalized\nValue"
+    ) +
+    facet_wrap(~Metric, ncol = 1, scales = "free_y") +
+    labs(
+      title = "Quality Metrics Heatmap",
+      x = "Number of Clusters (k)",
+      y = "Configuration"
+    ) +
+    theme_minimal() +
+    theme(
+      plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
+      strip.text = element_text(face = "bold", size = 11),
+      axis.text.x = element_text(angle = 0)
     )
-    if (key %in% names(resultados)) {
-      return(resultados[[key]]$silhouette_plot)
-    } else {
-      warning("Configuración no encontrada: ", key)
-      return(NULL)
-    }
-  }
-
-  # Mensaje final
-  cat("\n\n========================================\n")
-  cat("COMPARACIÓN COMPLETADA\n")
-  cat("========================================\n")
-  cat("Total configuraciones evaluadas:", length(resultados), "\n")
-  if (save_plots) {
-    cat("Plots guardados en:", plots_dir, "\n")
-  }
-  cat(
-    "Acceso a plots individuales: clustering_comparison$resultados$<config>$silhouette_plot\n"
-  )
-  cat("O usa: get_silhouette_plot(metodo, clustering_method, k)\n")
 
   # Retornar resultados
   return(list(
     resultados = resultados,
     resumen = resumen_df,
-    plot_silhouette = plot_silhouette,
-    plot_ch = plot_ch,
-    plot_jaccard = plot_jaccard,
-    distances = list(
-      gower = D_gower,
-      euclidean_pca = D_euclidean_pca,
-      euclidean_mds = D_euclidean_mds,
-      mahalanobis_pca = D_mahalanobis_pca,
-      mahalanobis_mds = D_mahalanobis_mds
+    plots = list(
+      silhouette = plot_silhouette,
+      ch = plot_ch,
+      dunn = plot_dunn,
+      heatmap = plot_heatmap
     ),
-    get_plot = get_silhouette_plot # Función helper incluida
+    n_components = list(
+      pca = ncol(data_pca),
+      mds = ncol(data_mds)
+    )
   ))
 }
 
-# ============== EJECUTAR COMPARACIÓN ==============
-cat("\n\n========== INICIANDO COMPARACIÓN DE CLUSTERING ==========\n\n")
 
-clustering_comparison <- compare_clustering_methods(
-  data_original = data_airbnb_sample %>% dplyr::select(-id),
+compare_clustering_methods <- function(
+  data_pca,
+  data_mds,
+  k_values = 2:15,
+  seed = 123
+) {
+  set.seed(seed)
+
+  # Calcular distancias
+  cat("\nCalculando matrices de distancias...\n")
+  D_pca_euclidean <- dist(data_pca, method = "euclidean")
+  D_mds_euclidean <- dist(data_mds, method = "euclidean")
+
+  # NUEVO: Calcular distancias de Mahalanobis
+  cat("Calculando distancias de Mahalanobis...\n")
+  library(biotools)
+
+  D_pca_mahalanobis <- D2.dist(
+    data_pca,
+    cov = var(data_pca)
+  ) %>%
+    sqrt() %>%
+    as.dist()
+
+  D_mds_mahalanobis <- D2.dist(
+    data_mds,
+    cov = var(data_mds)
+  ) %>%
+    sqrt() %>%
+    as.dist()
+
+  # Listas para guardar resultados
+  resultados <- list()
+  resumen_tabla <- list()
+
+  # Configuraciones a probar (ACTUALIZADO con Mahalanobis)
+  configuraciones <- list(
+    list(
+      name = "PCA",
+      data = data_pca,
+      dist_euclidean = D_pca_euclidean,
+      dist_mahalanobis = D_pca_mahalanobis,
+      methods = c("PAM", "K-means")
+    ),
+    list(
+      name = "MDS",
+      data = data_mds,
+      dist_euclidean = D_mds_euclidean,
+      dist_mahalanobis = D_mds_mahalanobis,
+      methods = c("PAM", "K-means")
+    )
+  )
+
+  ## ============== 2. CLUSTERING PARA CADA CONFIGURACIÓN ==============
+  for (config in configuraciones) {
+    for (method in config$methods) {
+      for (k in k_values) {
+        # PAM con Euclidean
+        cat(sprintf(
+          "\n>>> %s + %s (Euclidean, k=%d)\n",
+          config$name,
+          method,
+          k
+        ))
+
+        if (method == "PAM") {
+          model <- pam(config$dist_euclidean, k = k)
+          clusters <- model$clustering
+          dist_used <- config$dist_euclidean
+          dist_name <- "Euclidean"
+        } else {
+          # K-means
+          model <- kmeans(config$data, centers = k, nstart = 25)
+          clusters <- model$cluster
+          dist_used <- config$dist_euclidean
+          dist_name <- "Euclidean"
+        }
+
+        # Métricas
+        sil_obj <- silhouette(clusters, dist_used)
+        sil_mean <- mean(sil_obj[, 3])
+        ch_index <- cluster.stats(dist_used, clusters)$ch
+        dunn_index <- cluster.stats(dist_used, clusters)$dunn
+        wss <- sum(cluster.stats(dist_used, clusters)$within.cluster.ss)
+
+        sizes <- table(clusters)
+        sizes_str <- paste(sizes, collapse = "-")
+        cv_sizes <- sd(as.numeric(sizes)) / mean(as.numeric(sizes))
+
+        sil_plot <- fviz_silhouette(sil_obj, print.summary = FALSE) +
+          labs(
+            title = sprintf(
+              "%s + %s (%s, k=%d)",
+              config$name,
+              method,
+              dist_name,
+              k
+            ),
+            subtitle = sprintf(
+              "Avg Silhouette: %.3f | CH: %.1f",
+              sil_mean,
+              ch_index
+            )
+          ) +
+          theme_minimal() +
+          theme(
+            plot.title = element_text(hjust = 0.5, face = "bold"),
+            plot.subtitle = element_text(hjust = 0.5)
+          )
+
+        key <- sprintf(
+          "%s_%s_%s_k%d",
+          tolower(config$name),
+          tolower(gsub("-", "", method)),
+          tolower(dist_name),
+          k
+        )
+
+        resultados[[key]] <- list(
+          space = config$name,
+          method = method,
+          distance = dist_name,
+          k = k,
+          clusters = clusters,
+          silhouette = sil_mean,
+          ch_index = ch_index,
+          dunn_index = dunn_index,
+          wss = wss,
+          cluster_sizes = sizes,
+          cv_sizes = cv_sizes,
+          silhouette_plot = sil_plot,
+          model = model
+        )
+
+        resumen_tabla[[length(resumen_tabla) + 1]] <- tibble(
+          Space = config$name,
+          Method = method,
+          Distance = dist_name,
+          k = k,
+          Silhouette = round(sil_mean, 4),
+          CH_Index = round(ch_index, 2),
+          Dunn_Index = round(dunn_index, 4),
+          WSS = round(wss, 2),
+          CV_Sizes = round(cv_sizes, 3),
+          Cluster_Sizes = sizes_str
+        )
+
+        # NUEVO: PAM con Mahalanobis
+        if (method == "PAM") {
+          cat(sprintf("\n>>> %s + PAM (Mahalanobis, k=%d)\n", config$name, k))
+
+          model_maha <- pam(config$dist_mahalanobis, k = k)
+          clusters_maha <- model_maha$clustering
+
+          sil_obj_maha <- silhouette(clusters_maha, config$dist_mahalanobis)
+          sil_mean_maha <- mean(sil_obj_maha[, 3])
+          ch_index_maha <- cluster.stats(
+            config$dist_mahalanobis,
+            clusters_maha
+          )$ch
+          dunn_index_maha <- cluster.stats(
+            config$dist_mahalanobis,
+            clusters_maha
+          )$dunn
+          wss_maha <- sum(
+            cluster.stats(
+              config$dist_mahalanobis,
+              clusters_maha
+            )$within.cluster.ss
+          )
+
+          sizes_maha <- table(clusters_maha)
+          sizes_str_maha <- paste(sizes_maha, collapse = "-")
+          cv_sizes_maha <- sd(as.numeric(sizes_maha)) /
+            mean(as.numeric(sizes_maha))
+
+          sil_plot_maha <- fviz_silhouette(
+            sil_obj_maha,
+            print.summary = FALSE
+          ) +
+            labs(
+              title = sprintf("%s + PAM (Mahalanobis, k=%d)", config$name, k),
+              subtitle = sprintf(
+                "Avg Silhouette: %.3f | CH: %.1f",
+                sil_mean_maha,
+                ch_index_maha
+              )
+            ) +
+            theme_minimal() +
+            theme(
+              plot.title = element_text(hjust = 0.5, face = "bold"),
+              plot.subtitle = element_text(hjust = 0.5)
+            )
+
+          key_maha <- sprintf(
+            "%s_pam_mahalanobis_k%d",
+            tolower(config$name),
+            k
+          )
+
+          resultados[[key_maha]] <- list(
+            space = config$name,
+            method = "PAM",
+            distance = "Mahalanobis",
+            k = k,
+            clusters = clusters_maha,
+            silhouette = sil_mean_maha,
+            ch_index = ch_index_maha,
+            dunn_index = dunn_index_maha,
+            wss = wss_maha,
+            cluster_sizes = sizes_maha,
+            cv_sizes = cv_sizes_maha,
+            silhouette_plot = sil_plot_maha,
+            model = model_maha
+          )
+
+          resumen_tabla[[length(resumen_tabla) + 1]] <- tibble(
+            Space = config$name,
+            Method = "PAM",
+            Distance = "Mahalanobis",
+            k = k,
+            Silhouette = round(sil_mean_maha, 4),
+            CH_Index = round(ch_index_maha, 2),
+            Dunn_Index = round(dunn_index_maha, 4),
+            WSS = round(wss_maha, 2),
+            CV_Sizes = round(cv_sizes_maha, 3),
+            Cluster_Sizes = sizes_str_maha
+          )
+        }
+      }
+    }
+  }
+
+  # Convertir a dataframe y ordenar
+  resumen_df <- bind_rows(resumen_tabla) %>%
+    mutate(
+      Config = paste(Space, Method, Distance, sep = " + "),
+      Score = ((Silhouette - min(Silhouette)) /
+        (max(Silhouette) - min(Silhouette)) *
+        0.4 +
+        (CH_Index - min(CH_Index)) / (max(CH_Index) - min(CH_Index)) * 0.3 +
+        (Dunn_Index - min(Dunn_Index)) /
+          (max(Dunn_Index) - min(Dunn_Index)) *
+          0.2 +
+        (1 - CV_Sizes / max(CV_Sizes)) * 0.1)
+    ) %>%
+    arrange(desc(Score))
+
+  ## ============== 3. GRÁFICOS COMPARATIVOS ==============
+
+  # Silhouette vs k
+  plot_silhouette <- ggplot(
+    resumen_df,
+    aes(x = k, y = Silhouette, color = Config, group = Config)
+  ) +
+    geom_line(linewidth = 1.2) +
+    geom_point(size = 3) +
+    labs(
+      title = "Average Silhouette Width by Method and k",
+      x = "Number of Clusters (k)",
+      y = "Average Silhouette Width",
+      color = "Configuration"
+    ) +
+    theme_minimal() +
+    theme(
+      plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
+      legend.position = "bottom"
+    ) +
+    scale_x_continuous(breaks = k_values)
+
+  # NUEVO: Elbow plot (WSS)
+  plot_elbow <- ggplot(
+    resumen_df,
+    aes(x = k, y = WSS, color = Config, group = Config)
+  ) +
+    geom_line(linewidth = 1.2) +
+    geom_point(size = 3) +
+    labs(
+      title = "Elbow Method: Within-cluster Sum of Squares",
+      x = "Number of Clusters (k)",
+      y = "WSS",
+      color = "Configuration"
+    ) +
+    theme_minimal() +
+    theme(
+      plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
+      legend.position = "bottom"
+    ) +
+    scale_x_continuous(breaks = k_values)
+
+  # Calinski-Harabasz vs k
+  plot_ch <- ggplot(
+    resumen_df,
+    aes(x = k, y = CH_Index, color = Config, group = Config)
+  ) +
+    geom_line(linewidth = 1.2) +
+    geom_point(size = 3) +
+    labs(
+      title = "Calinski-Harabasz Index by Method and k",
+      x = "Number of Clusters (k)",
+      y = "CH Index",
+      color = "Configuration"
+    ) +
+    theme_minimal() +
+    theme(
+      plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
+      legend.position = "bottom"
+    ) +
+    scale_x_continuous(breaks = k_values)
+
+  # Dunn Index vs k
+  plot_dunn <- ggplot(
+    resumen_df,
+    aes(x = k, y = Dunn_Index, color = Config, group = Config)
+  ) +
+    geom_line(linewidth = 1.2) +
+    geom_point(size = 3) +
+    labs(
+      title = "Dunn Index by Method and k",
+      x = "Number of Clusters (k)",
+      y = "Dunn Index",
+      color = "Configuration"
+    ) +
+    theme_minimal() +
+    theme(
+      plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
+      legend.position = "bottom"
+    ) +
+    scale_x_continuous(breaks = k_values)
+
+  # Heatmap de métricas
+  heatmap_data <- resumen_df %>%
+    dplyr::select(Config, k, Silhouette, CH_Index, Dunn_Index) %>%
+    pivot_longer(
+      cols = c(Silhouette, CH_Index, Dunn_Index),
+      names_to = "Metric",
+      values_to = "Value"
+    ) %>%
+    group_by(Metric) %>%
+    mutate(
+      Value_Normalized = (Value - min(Value)) / (max(Value) - min(Value))
+    ) %>%
+    ungroup()
+
+  plot_heatmap <- ggplot(
+    heatmap_data,
+    aes(x = factor(k), y = Config, fill = Value_Normalized)
+  ) +
+    geom_tile(color = "white") +
+    geom_text(aes(label = round(Value, 2)), color = "black", size = 2.5) +
+    scale_fill_gradient2(
+      low = "red",
+      mid = "yellow",
+      high = "green",
+      midpoint = 0.5,
+      name = "Normalized\nValue"
+    ) +
+    facet_wrap(~Metric, ncol = 1, scales = "free_y") +
+    labs(
+      title = "Quality Metrics Heatmap",
+      x = "Number of Clusters (k)",
+      y = "Configuration"
+    ) +
+    theme_minimal() +
+    theme(
+      plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
+      strip.text = element_text(face = "bold", size = 11),
+      axis.text.x = element_text(angle = 0)
+    )
+
+  # Retornar resultados
+  return(list(
+    resultados = resultados,
+    resumen = resumen_df,
+    plots = list(
+      silhouette = plot_silhouette,
+      elbow = plot_elbow, # NUEVO
+      ch = plot_ch,
+      dunn = plot_dunn,
+      heatmap = plot_heatmap
+    ),
+    n_components = list(
+      pca = ncol(data_pca),
+      mds = ncol(data_mds)
+    )
+  ))
+}
+
+## ============== 4. EJECUTAR COMPARACIÓN ==============
+clustering_results <- compare_clustering_methods(
   data_pca = PCA_coordinates,
-  data_mds = MDS_classic_data[, 1:3],
-  k_values = 2:20,
-  B = 1000,
-  seed = 1234,
-  compute_bootstrap = FALSE,
-  save_plots = TRUE, # Guardar todos los plots automáticamente
-  plots_dir = "./plots/silhouette_comparison"
+  data_mds = MDS_coordinates,
+  k_values = 3:12,
+  seed = 123
 )
 
-# Ver resumen
-clustering_comparison$resumen
+## ============== 5. VISUALIZAR RESULTADOS ==============
+# Ver todos los gráficos
+clustering_results$plots$silhouette
+clustering_results$plots$elbow # NUEVO: Elbow plot
+clustering_results$plots$ch
+clustering_results$plots$dunn
+clustering_results$plots$heatmap
 
-# Ver gráficos comparativos
-clustering_comparison$plot_silhouette
-clustering_comparison$plot_ch
-clustering_comparison$plot_jaccard
+# Ver resumen con todas las configuraciones (incluyendo Mahalanobis)
+clustering_results$resumen %>%
+  dplyr::select(
+    Space,
+    Method,
+    Distance,
+    k,
+    Silhouette,
+    CH_Index,
+    Dunn_Index,
+    WSS,
+    Score
+  ) %>%
+  arrange(desc(Score)) %>%
+  head(15)
 
-# Mejor configuración por Silhouette
-best_silhouette <- clustering_comparison$resumen %>%
-  arrange(desc(silhouette)) %>%
-  head(5)
+# 🎓 Justificación para el informe:
+# "Se seleccionaron dos configuraciones finales de clustering:
 
-cat("\n=== Top 5 configuraciones por Silhouette ===\n")
-print(best_silhouette)
+# PCA + K-means (k=4) con distancia Euclidiana, que obtuvo el mejor Score combinado (0.718) y presenta 4 clusters interpretables diferenciados principalmente por variables de tamaño y precio (loadings de PC1-PC2).
 
-# Extraer plot del ganador usando la función helper
-best_plot <- clustering_comparison$get_plot(
-  metodo = best_silhouette$metodo[1],
-  clustering_method = best_silhouette$clustering_method[1],
-  k = best_silhouette$k[1]
+# MDS + K-means (k=8) con distancia Euclidiana, que captura segmentos más finos considerando variables mixtas (numéricas + categóricas). Aunque k=11 tenía Score ligeramente superior, k=8 se prefirió por su balance entre separación (Dunn=0.134) y parsimonia interpretativa.
+
+# Ambos modelos utilizan K-means sobre espacios reducidos que explican >70% de varianza, garantizando eficiencia computacional y robustez estadística."
+
+## ============== MODELOS FINALES SELECCIONADOS ==============
+
+# PCA: K-means k=4
+modelo_pca_final <- clustering_results$resultados$pca_kmeans_euclidean_k4
+
+# MDS: K-means k=8
+modelo_mds_final <- clustering_results$resultados$mds_kmeans_euclidean_k7
+#modelo_mds_final <- clustering_results$resultados$mds_kmeans_euclidean_k11
+
+## ============== VISUALIZACIÓN COMPARATIVA ==============
+library(gridExtra)
+
+grid.arrange(
+  modelo_pca_final$silhouette_plot,
+  modelo_mds_final$silhouette_plot,
+  ncol = 2
 )
-best_plot
 
-# O acceso directo
-names(clustering_comparison$resultados) # Ver todos los nombres disponibles
+## ============== AÑADIR CLUSTERS A LOS DATOS ==============
+data_airbnb_sample_clustered <- data_airbnb_sample %>%
+  mutate(
+    Cluster_PCA = factor(modelo_pca_final$clusters),
+    Cluster_MDS = factor(modelo_mds_final$clusters)
+  )
+
+## ============== PLOTS EN ESPACIOS REDUCIDOS ==============
+
+# PCA
+PCA_clustered <- PCA_coordinates %>%
+  mutate(Cluster = factor(modelo_pca_final$clusters))
+
+plot_pca_k4 <- ggplot(
+  PCA_clustered,
+  aes(x = PC1, y = PC2, color = Cluster)
+) +
+  geom_point(alpha = 0.6, size = 2.5) +
+  stat_ellipse(level = 0.95, linewidth = 1) +
+  labs(
+    title = "PCA + K-means (k=4)",
+    subtitle = "Silhouette: 0.254 | CH: 265 | Score: 0.718",
+    x = paste0("PC1 (", round(pca_variance[1], 1), "%)"),
+    y = paste0("PC2 (", round(pca_variance[2], 1), "%)")
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold"),
+    legend.position = "bottom"
+  ) +
+  scale_color_brewer(palette = "Set1")
+
+# MDS
+MDS_clustered <- MDS_coordinates %>%
+  mutate(Cluster = factor(modelo_mds_final$clusters))
+
+plot_mds_k8 <- ggplot(
+  MDS_clustered,
+  aes(x = MDS1, y = MDS2, color = Cluster)
+) +
+  geom_point(alpha = 0.6, size = 2.5) +
+  stat_ellipse(level = 0.95, linewidth = 1) +
+  labs(
+    title = "MDS + K-means (k=8)",
+    subtitle = "Silhouette: 0.238 | CH: 141 | Dunn: 0.134 | Score: 0.687",
+    x = paste0("MDS1 (", round(var_relms[1], 1), "%)"),
+    y = paste0("MDS2 (", round(var_relms[2], 1), "%)")
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold"),
+    legend.position = "bottom"
+  ) +
+  scale_color_brewer(palette = "Set2")
+
+grid.arrange(plot_pca_k4, plot_mds_k8, ncol = 2)
+
+
+## -------- PCA 3D --------
+# Preparar datos con 3 componentes
+PCA_clustered_3d <- data.frame(
+  PC1 = PCA_coordinates$PC1,
+  PC2 = PCA_coordinates$PC2,
+  PC3 = PCA_coordinates$PC3,
+  Cluster = factor(modelo_pca_final$clusters)
+)
+
+# Gráfico 3D interactivo PCA
+plot_pca_3d <- plot_ly(
+  data = PCA_clustered_3d,
+  x = ~PC1,
+  y = ~PC2,
+  z = ~PC3,
+  color = ~Cluster,
+  colors = RColorBrewer::brewer.pal(4, "Set1"),
+  type = "scatter3d",
+  mode = "markers",
+  marker = list(
+    size = 4,
+    opacity = 0.7,
+    line = list(color = "white", width = 0.5)
+  ),
+  text = ~ paste0(
+    "Cluster: ",
+    Cluster,
+    "<br>PC1: ",
+    round(PC1, 2),
+    "<br>PC2: ",
+    round(PC2, 2),
+    "<br>PC3: ",
+    round(PC3, 2)
+  ),
+  hoverinfo = "text"
+) %>%
+  layout(
+    title = list(
+      text = paste0(
+        "<b>PCA 3D: K-means (k=4)</b><br>",
+        "<sup>Silhouette: 0.254 | CH: 265 | Score: 0.718</sup>"
+      ),
+      x = 0.5,
+      xanchor = "center"
+    ),
+    scene = list(
+      xaxis = list(title = paste0("PC1 (", round(pca_variance[1], 1), "%)")),
+      yaxis = list(title = paste0("PC2 (", round(pca_variance[2], 1), "%)")),
+      zaxis = list(title = paste0("PC3 (", round(pca_variance[3], 1), "%)"))
+    ),
+    legend = list(
+      title = list(text = "<b>Cluster</b>"),
+      orientation = "v",
+      x = 1.02,
+      y = 0.5
+    )
+  )
+
+plot_pca_3d
+
+## -------- MDS 3D --------
+# Preparar datos con 3 dimensiones MDS
+MDS_clustered_3d <- data.frame(
+  MDS1 = MDS_coordinates$MDS1,
+  MDS2 = MDS_coordinates$MDS2,
+  MDS3 = MDS_coordinates$MDS3,
+  Cluster = factor(modelo_mds_final$clusters)
+)
+
+# Gráfico 3D interactivo MDS
+plot_mds_3d <- plot_ly(
+  data = MDS_clustered_3d,
+  x = ~MDS1,
+  y = ~MDS2,
+  z = ~MDS3,
+  color = ~Cluster,
+  colors = RColorBrewer::brewer.pal(8, "Set2"),
+  type = "scatter3d",
+  mode = "markers",
+  marker = list(
+    size = 4,
+    opacity = 0.85,
+    line = list(color = "white", width = 0.5)
+  ),
+  text = ~ paste0(
+    "Cluster: ",
+    Cluster,
+    "<br>MDS1: ",
+    round(MDS1, 2),
+    "<br>MDS2: ",
+    round(MDS2, 2),
+    "<br>MDS3: ",
+    round(MDS3, 2)
+  ),
+  hoverinfo = "text"
+) %>%
+  layout(
+    title = list(
+      text = paste0(
+        "<b>MDS 3D: K-means (k=8)</b><br>",
+        "<sup>Silhouette: 0.238 | CH: 141 | Dunn: 0.134 | Score: 0.687</sup>"
+      ),
+      x = 0.5,
+      xanchor = "center"
+    ),
+    scene = list(
+      xaxis = list(title = paste0("MDS1 (", round(var_relms[1], 1), "%)")),
+      yaxis = list(title = paste0("MDS2 (", round(var_relms[2], 1), "%)")),
+      zaxis = list(title = paste0("MDS3 (", round(var_relms[3], 1), "%)"))
+    ),
+    legend = list(
+      title = list(text = "<b>Cluster</b>"),
+      orientation = "v",
+      x = 1.02,
+      y = 0.5
+    )
+  )
+
+plot_mds_3d
+
+
+## ============== GRÁFICOS 3D CON ESFERAS ENVOLVENTES ==============
+
+## -------- Función para crear mesh 3D de un cluster --------
+create_cluster_mesh <- function(points, color, opacity = 0.15) {
+  # Calcular convex hull
+  hull <- convhulln(points, options = "FA")
+
+  # Extraer coordenadas de los vértices del hull
+  vertices <- hull$hull
+
+  # Crear mesh3d
+  mesh <- list(
+    type = "mesh3d",
+    x = points[, 1],
+    y = points[, 2],
+    z = points[, 3],
+    i = vertices[, 1] - 1, # Plotly usa índices 0-based
+    j = vertices[, 2] - 1,
+    k = vertices[, 3] - 1,
+    opacity = opacity,
+    color = color,
+    showlegend = FALSE,
+    hoverinfo = "skip"
+  )
+
+  return(mesh)
+}
+
+## -------- PCA 3D CON ESFERAS --------
+# Paleta de colores
+colors_pca <- RColorBrewer::brewer.pal(4, "Set1")
+
+# Crear plot base
+plot_pca_3d_spheres <- plot_ly()
+
+# Añadir mesh para cada cluster
+for (i in 1:4) {
+  cluster_data <- PCA_clustered_3d %>%
+    filter(Cluster == i) %>%
+    select(PC1, PC2, PC3) %>%
+    as.matrix()
+
+  # Solo crear hull si hay suficientes puntos (mínimo 4)
+  if (nrow(cluster_data) >= 4) {
+    mesh <- create_cluster_mesh(
+      cluster_data,
+      color = colors_pca[i],
+      opacity = 0.15
+    )
+
+    plot_pca_3d_spheres <- plot_pca_3d_spheres %>%
+      add_trace(
+        type = mesh$type,
+        x = mesh$x,
+        y = mesh$y,
+        z = mesh$z,
+        i = mesh$i,
+        j = mesh$j,
+        k = mesh$k,
+        opacity = mesh$opacity,
+        color = mesh$color,
+        showlegend = FALSE,
+        hoverinfo = "skip"
+      )
+  }
+}
+
+# Añadir puntos encima de las esferas
+plot_pca_3d_spheres <- plot_pca_3d_spheres %>%
+  add_trace(
+    data = PCA_clustered_3d,
+    x = ~PC1,
+    y = ~PC2,
+    z = ~PC3,
+    color = ~Cluster,
+    colors = colors_pca,
+    type = "scatter3d",
+    mode = "markers",
+    marker = list(
+      size = 4,
+      opacity = 0.8,
+      line = list(color = "white", width = 0.5)
+    ),
+    text = ~ paste0(
+      "Cluster: ",
+      Cluster,
+      "<br>PC1: ",
+      round(PC1, 2),
+      "<br>PC2: ",
+      round(PC2, 2),
+      "<br>PC3: ",
+      round(PC3, 2)
+    ),
+    hoverinfo = "text"
+  ) %>%
+  layout(
+    title = list(
+      text = paste0(
+        "<b>PCA 3D: K-means (k=4) - Con regiones</b><br>",
+        "<sup>Silhouette: 0.254 | CH: 265 | Score: 0.718</sup>"
+      ),
+      x = 0.5,
+      xanchor = "center"
+    ),
+    scene = list(
+      xaxis = list(title = paste0("PC1 (", round(pca_variance[1], 1), "%)")),
+      yaxis = list(title = paste0("PC2 (", round(pca_variance[2], 1), "%)")),
+      zaxis = list(title = paste0("PC3 (", round(pca_variance[3], 1), "%)"))
+    ),
+    legend = list(
+      title = list(text = "<b>Cluster</b>"),
+      orientation = "v",
+      x = 1.02,
+      y = 0.5
+    )
+  )
+
+plot_pca_3d_spheres
+
+## -------- MDS 3D CON ESFERAS --------
+colors_mds <- RColorBrewer::brewer.pal(8, "Set3")
+
+plot_mds_3d_spheres <- plot_ly()
+
+# Añadir mesh para cada cluster
+for (i in 1:8) {
+  cluster_data <- MDS_clustered_3d %>%
+    filter(Cluster == i) %>%
+    select(MDS1, MDS2, MDS3) %>%
+    as.matrix()
+
+  if (nrow(cluster_data) >= 4) {
+    mesh <- create_cluster_mesh(
+      cluster_data,
+      color = colors_mds[i],
+      opacity = 0.12 # Más transparente para MDS (más clusters)
+    )
+
+    plot_mds_3d_spheres <- plot_mds_3d_spheres %>%
+      add_trace(
+        type = mesh$type,
+        x = mesh$x,
+        y = mesh$y,
+        z = mesh$z,
+        i = mesh$i,
+        j = mesh$j,
+        k = mesh$k,
+        opacity = mesh$opacity,
+        color = mesh$color,
+        showlegend = FALSE,
+        hoverinfo = "skip"
+      )
+  }
+}
+
+# Añadir puntos
+plot_mds_3d_spheres <- plot_mds_3d_spheres %>%
+  add_trace(
+    data = MDS_clustered_3d,
+    x = ~MDS1,
+    y = ~MDS2,
+    z = ~MDS3,
+    color = ~Cluster,
+    colors = colors_mds,
+    type = "scatter3d",
+    mode = "markers",
+    marker = list(
+      size = 4,
+      opacity = 0.8,
+      line = list(color = "white", width = 0.5)
+    ),
+    text = ~ paste0(
+      "Cluster: ",
+      Cluster,
+      "<br>MDS1: ",
+      round(MDS1, 2),
+      "<br>MDS2: ",
+      round(MDS2, 2),
+      "<br>MDS3: ",
+      round(MDS3, 2)
+    ),
+    hoverinfo = "text"
+  ) %>%
+  layout(
+    title = list(
+      text = paste0(
+        "<b>MDS 3D: K-means (k=8) - Con regiones</b><br>",
+        "<sup>Silhouette: 0.238 | CH: 141 | Dunn: 0.134 | Score: 0.687</sup>"
+      ),
+      x = 0.5,
+      xanchor = "center"
+    ),
+    scene = list(
+      xaxis = list(title = paste0("MDS1 (", round(var_relms[1], 1), "%)")),
+      yaxis = list(title = paste0("MDS2 (", round(var_relms[2], 1), "%)")),
+      zaxis = list(title = paste0("MDS3 (", round(var_relms[3], 1), "%)"))
+    ),
+    legend = list(
+      title = list(text = "<b>Cluster</b>"),
+      orientation = "v",
+      x = 1.02,
+      y = 0.5
+    )
+  )
+
+plot_mds_3d_spheres
+
+
+## ============== TABLAS DE CARACTERIZACIÓN DE CLUSTERS ==============
+# Función para crear tabla de caracterización por cluster
+create_cluster_table <- function(
+  data_with_clusters, # ← CAMBIO: Ya incluye los clusters
+  cluster_var, # ← Nombre de la columna de cluster
+  title = "Cluster Characterization"
+) {
+  # Crear tabla bivariante
+  tabla_clusters <- data_with_clusters %>%
+    dplyr::select(-id) %>% # Quitar ID
+    tbl_summary(
+      by = all_of(cluster_var), # ← Usar columna existente
+      type = list(
+        "bedrooms" ~ "continuous"
+      ),
+      statistic = list(
+        all_continuous() ~ "{median} ({IQR})", # Mediana (IQR)
+        all_categorical() ~ "{n} ({p}%)"
+      ),
+      digits = list(
+        all_continuous() ~ 2,
+        all_categorical() ~ c(0, 1)
+      ),
+      missing = "no"
+    ) %>%
+    add_p(
+      test = list(
+        all_continuous() ~ "kruskal.test", # Kruskal-Wallis para continuas
+        all_categorical() ~ "chisq.test" # Chi-cuadrado para categóricas
+      ),
+      pvalue_fun = function(x) style_pvalue(x, digits = 3)
+    ) %>%
+    add_overall(last = TRUE) %>% # Añadir columna "Overall"
+    modify_header(
+      label ~ "**Variable**",
+      all_stat_cols() ~ "**{level}**<br>N = {n}"
+    ) %>%
+    modify_spanning_header(
+      all_stat_cols() ~ paste0("**", cluster_var, "**")
+    ) %>%
+    bold_labels() %>%
+    bold_p(t = 0.05) %>% # Resaltar p < 0.05
+    as_gt() %>%
+    tab_header(
+      title = md(paste0("**", title, "**")),
+      subtitle = paste("N =", nrow(data_with_clusters), "observations")
+    ) %>%
+    tab_options(
+      table.border.top.color = "black",
+      table.border.top.width = px(3),
+      table.border.bottom.color = "black",
+      table.border.bottom.width = px(3),
+      heading.border.bottom.color = "black",
+      heading.border.bottom.width = px(2),
+      column_labels.border.top.color = "black",
+      column_labels.border.top.width = px(2),
+      column_labels.border.bottom.color = "black",
+      column_labels.border.bottom.width = px(2),
+      table_body.border.bottom.color = "black",
+      table_body.border.bottom.width = px(2),
+      heading.align = "center",
+      column_labels.font.weight = "bold",
+      table.font.size = px(12),
+      heading.title.font.size = px(16),
+      heading.subtitle.font.size = px(12)
+    ) %>%
+    tab_footnote(
+      footnote = md(
+        "*Continuous variables: Median (IQR). Test: Kruskal-Wallis.*"
+      ),
+      locations = cells_title(groups = "subtitle")
+    ) %>%
+    tab_footnote(
+      footnote = md(
+        "*Categorical variables: N (%). Test: Chi-squared. **Bold p < 0.05**.*"
+      ),
+      locations = cells_title(groups = "subtitle")
+    )
+
+  return(tabla_clusters)
+}
+
+
+# Tabla PCA (usando Cluster_PCA que ya existe en data_airbnb_sample_clustered)
+tabla_clusters_pca <- create_cluster_table(
+  data_with_clusters = data_airbnb_sample_clustered,
+  cluster_var = "Cluster_PCA",
+  title = "PCA Clustering Characterization (k=4)"
+)
+
+# Tabla MDS (usando Cluster_MDS que ya existe en data_airbnb_sample_clustered)
+tabla_clusters_mds <- create_cluster_table(
+  data_with_clusters = data_airbnb_sample_clustered,
+  cluster_var = "Cluster_MDS",
+  title = "MDS Clustering Characterization (k=8)"
+)
+
+
+## ============== ADJUSTED RAND INDEX ==============
+library(mclust)
+
+rand_index <- adjustedRandIndex(
+  data_airbnb_sample_clustered$Cluster_PCA,
+  data_airbnb_sample_clustered$Cluster_MDS
+)
 
 
 ## ----------------------------------------------------------------------------------------------------------
