@@ -1,0 +1,1126 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.26">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Marc Pastor Pou, Juan Ángel Pérez Córcoles, Eduardo Gambín Monserrat">
+<meta name="dcterms.date" content="2025-12-21">
+
+<title>Multivariate Analysis: First Assignment</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="todo_files/libs/clipboard/clipboard.min.js"></script>
+<script src="todo_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="todo_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="todo_files/libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="todo_files/libs/quarto-html/popper.min.js"></script>
+<script src="todo_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="todo_files/libs/quarto-html/anchor.min.js"></script>
+<link href="todo_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="todo_files/libs/quarto-html/quarto-syntax-highlighting-587c61ba64f3a5504c4d52d930310e48.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="todo_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="todo_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="todo_files/libs/bootstrap/bootstrap-9e3ffae467580fdb927a41352e75a2e0.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<style>html{ scroll-behavior: smooth; }</style>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+</head>
+
+<body class="quarto-light">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article toc-left">
+<div id="quarto-sidebar-toc-left" class="sidebar toc-left">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of Contents</h2>
+   
+  <ul>
+  <li><a href="#preprocessing" id="toc-preprocessing" class="nav-link active" data-scroll-target="#preprocessing">Preprocessing</a>
+  <ul class="collapse">
+  <li><a href="#selection-criteria" id="toc-selection-criteria" class="nav-link" data-scroll-target="#selection-criteria">Selection criteria</a></li>
+  </ul></li>
+  <li><a href="#data-exploration" id="toc-data-exploration" class="nav-link" data-scroll-target="#data-exploration">Data exploration</a></li>
+  <li><a href="#correlation-analysis" id="toc-correlation-analysis" class="nav-link" data-scroll-target="#correlation-analysis">Correlation analysis</a></li>
+  <li><a href="#principal-component-analysis" id="toc-principal-component-analysis" class="nav-link" data-scroll-target="#principal-component-analysis">Principal Component Analysis</a>
+  <ul class="collapse">
+  <li><a href="#pca-analysis" id="toc-pca-analysis" class="nav-link" data-scroll-target="#pca-analysis">PCA analysis</a></li>
+  <li><a href="#correlation-plots-between-pcs-and-original-variables" id="toc-correlation-plots-between-pcs-and-original-variables" class="nav-link" data-scroll-target="#correlation-plots-between-pcs-and-original-variables">Correlation plots between PC’s and original variables</a></li>
+  <li><a href="#contribution-plots" id="toc-contribution-plots" class="nav-link" data-scroll-target="#contribution-plots">Contribution plots</a></li>
+  <li><a href="#pca-stability-analysis" id="toc-pca-stability-analysis" class="nav-link" data-scroll-target="#pca-stability-analysis">PCA stability analysis</a></li>
+  </ul></li>
+  </ul>
+<div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="../todo.pdf"><i class="bi bi-file-pdf"></i>PDF</a></li></ul></div></nav>
+</div>
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
+</div>
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Multivariate Analysis: First Assignment</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Marc Pastor Pou, Juan Ángel Pérez Córcoles, Eduardo Gambín Monserrat </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">December 21, 2025</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="preprocessing" class="level2">
+<h2 class="anchored" data-anchor-id="preprocessing">Preprocessing</h2>
+<p>For this assignment we have decided to work with data from the <a href="https://insideairbnb.com/">Inside Airbnb</a> database. It was created originally by the activist Murray Cox in 2015 to show the impact of Airbnb in local communities, but nowadays it serves as a database for Airbnb in many cities in the world. Among them, we have selected Madrid, since it is a familiar place to all of the components of the group. Information was last updated on September the 14<sup>th</sup> 2025, so it is quite up to date.</p>
+<p>The data “as is” contains 25000 observations of 79 variables, including categorical, quantitative, and binary data. Moreover, one of the variables (called <code>amenities</code>), holds a list of amenities available in the rental unit (such as WiFi, elevator, kitchen, etc.), which can be thought as binary variables as well (the rental unit has this amenity or not). The assignment required to use around 10-15 variables and around 100-1000 observations, so we have decided to:</p>
+<ol type="1">
+<li>Remove variables with high presence of NA values.</li>
+<li>Remove every row containing any NA value (since we have so many there are enough left).</li>
+<li>Decompose the <code>amenities</code> variable into binary columns.</li>
+<li>Select the most interesting variables out of the remaining (so we can end up close to 15).</li>
+<li>Sample the remaining observations until we keep 1000 of them.</li>
+</ol>
+<p>After selection, we remain with 15 variables, which can be seen in <a href="#tbl-variables" class="quarto-xref">Table&nbsp;1</a>.</p>
+<div id="tbl-variables" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-tbl figure">
+<div aria-describedby="tbl-variables-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<table class="table">
+<colgroup>
+<col style="width: 27%">
+<col style="width: 10%">
+<col style="width: 62%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Variable</th>
+<th style="text-align: left;">Type</th>
+<th style="text-align: left;">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;"><code>accommodates</code></td>
+<td style="text-align: left;">Quantitative</td>
+<td style="text-align: left;">The maximum capacity of the listing</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><code>air_conditioning</code></td>
+<td style="text-align: left;">Binary</td>
+<td style="text-align: left;">Is there an air conditioning in the listing?</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><code>bathrooms</code></td>
+<td style="text-align: left;">Quantitative</td>
+<td style="text-align: left;">The number of bathrooms in the listing</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><code>bedrooms</code></td>
+<td style="text-align: left;">Quantitative</td>
+<td style="text-align: left;">The number of bedrooms</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><code>elevator</code></td>
+<td style="text-align: left;">Binary</td>
+<td style="text-align: left;">Is there an elevator in the listing?</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><code>estimated_occupancy_l365d</code></td>
+<td style="text-align: left;">Quantitative</td>
+<td style="text-align: left;">Estimated number of days that the listing will be rented per year</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><code>heating</code></td>
+<td style="text-align: left;">Binary</td>
+<td style="text-align: left;">Is there a heating system in the listing?</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><code>host_age_years</code></td>
+<td style="text-align: left;">Quantitative</td>
+<td style="text-align: left;">Time (in years) that the owner of the listing has been with Airbnb</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><code>host_total_listings_count</code></td>
+<td style="text-align: left;">Quantitative</td>
+<td style="text-align: left;">The number of listings the host has (per Airbnb unknown calculations)</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><code>minimum_nights</code></td>
+<td style="text-align: left;">Quantitative</td>
+<td style="text-align: left;">Minimum number of night stay for the listing</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><code>neighborhood_group_cleansed</code></td>
+<td style="text-align: left;">Categorical</td>
+<td style="text-align: left;">The neighborhood group as defined by public digital shapefiles</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><code>number_of_reviews</code></td>
+<td style="text-align: left;">Quantitative</td>
+<td style="text-align: left;">The number of reviews the listing has</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><code>price</code></td>
+<td style="text-align: left;">Quantitative</td>
+<td style="text-align: left;">Daily price in local currency</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><code>review_scores_value</code></td>
+<td style="text-align: left;">Quantitative</td>
+<td style="text-align: left;">Average of the reviews of the listing</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><code>room_type</code></td>
+<td style="text-align: left;">Categorical</td>
+<td style="text-align: left;">{ Entire place, Private room, Shared room, Entire place }</td>
+</tr>
+</tbody>
+</table>
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-tbl" id="tbl-variables-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;1: Selected variables from the data set: 10 quantitative variables, 3 binary, and 2 multiclass categorical.
+</figcaption>
+</figure>
+</div>
+<section id="selection-criteria" class="level3">
+<h3 class="anchored" data-anchor-id="selection-criteria">Selection criteria</h3>
+<section id="missing-variables" class="level4">
+<h4 class="anchored" data-anchor-id="missing-variables">Missing variables</h4>
+<p>Variables with a high percentage of missing values can be safely discarded. Let us take a look at <a href="#fig-missing" class="quarto-xref">Figure&nbsp;1</a>.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div id="fig-missing" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-missing-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="todo_files/figure-html/fig-missing-1.png" class="img-fluid figure-img" width="672">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-missing-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1: A summary of the variables with missing values in the dataset
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>We can see that the <code>calendar_updated</code> variable is almost entirely missing, so we discard it. Among the remaining variables with missing values, we can see that the worst case has around 25% values missing. If rows with missing variables do not match between them (in other words, if they are disjoint sets) we could run into trouble by discarding rows with any NA.</p>
+<p>A better approach than removing the rows blindly is perhaps to first choose the variables we want to keep, which will minimize the possibility of finding one. In order to do so, we first need to decompose the <code>amenities</code>, as we see in the following section.</p>
+</section>
+<section id="frequent-amenities" class="level4">
+<h4 class="anchored" data-anchor-id="frequent-amenities">Frequent amenities</h4>
+<p>Among the possible amenities we have basic commodities that the listing is expected to have, such as WiFi or a kitchen, and others that are additions with less relevance, such as a dryer or a dedicated workspace. It is clear that the latter will have little impact on customers’ decisions, whereas the former have a huge impact on the listing if they are missing. The criterion we have followed to select the amenities is to keep those that appear in more than 10% of the data, which turned to be 20 of them. These are 20 new variables to consider with binary values (representing if it is present in the listing or not).</p>
+</section>
+<section id="selecting-interesting-variables" class="level4">
+<h4 class="anchored" data-anchor-id="selecting-interesting-variables">Selecting interesting variables</h4>
+<p>Since the number of variables still present in the data was too big (98), we decided to keep those that seemed the most interesting and relevant. We have already seen in <a href="#tbl-variables" class="quarto-xref">Table&nbsp;1</a> the ones we chose, where we tried to respect the original requirement of having at least two binary variables, two multiclass categoricals, and six quantitatives.</p>
+</section>
+<section id="sec-removing-rows" class="level4">
+<h4 class="anchored" data-anchor-id="sec-removing-rows">Removing rows with NA</h4>
+<p>Once we have our variables selected, we remove the rows with any missing values, which reduces the number of them from 25000 to 14970 (a 59.88% reduction).</p>
+</section>
+<section id="sampling-the-remaining-rows" class="level4">
+<h4 class="anchored" data-anchor-id="sampling-the-remaining-rows">Sampling the remaining rows</h4>
+<p>For the remaining rows, we wanted to make sure not to bias the sample by choosing too many samples from a single neighborhood, since the <code>Centro</code> neighborhood constitutes half of the data (6704 rows out of the $$15000 remaining). To this end, we sample by maintaining the original proportion of listings per neighborhood. In the end, we remain with 1000 variables following said directive.</p>
+<p>Some comments about the remaining variables:</p>
+<ul>
+<li>Neighbourhood representation is preserved. The most important one is ‘Centro’, as we mentioned before, with a representation of 45%.</li>
+<li>The most common type of listing is an entire apartment (75%), followed by a private room in someone’s house (24%).</li>
+<li>Listings typically have only one bedroom (62%), and sometimes two (23%).</li>
+<li>The average <code>price</code> of listings per night is 112 €, and the average occupation per year is 96 days.</li>
+</ul>
+</section>
+</section>
+</section>
+<section id="data-exploration" class="level2">
+<h2 class="anchored" data-anchor-id="data-exploration">Data exploration</h2>
+<p>Let us take a look now to the quantitative data by using histograms. Among the available, we have chosen to take a look into those shown in <a href="#fig-histograms" class="quarto-xref">Figure&nbsp;2</a>.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div id="fig-histograms" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-histograms-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="todo_files/figure-html/fig-histograms-1.png" class="img-fluid figure-img" width="672">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-histograms-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;2: Histograms of selected variables in the dataset.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<ul>
+<li>Interestingly, we see that the bathrooms variable is not an integer but continuous. The reasonable explanation for this is that toilets (without a shower) are considered “half bathrooms”. We can see, nevertheless, that listings typically have only one bathroom, sometimes two, and less frequently “one and a half”.</li>
+<li>The price histogram is right-skewed because of some high-priced outliers. Average price, as we saw in the univariate table, is 112 € per night, with a standard deviation of <span class="math inline">\(\pm 91.25\)</span>, which checks with what can be seen in the histogram.</li>
+<li>The review scores are left-skewed, which is to be expected. These types of situations arise frequently in review systems, since value <code>4</code> is considered as a good experience instead of 3 as we might naively think. The latter is usually considered as a “bad review”.</li>
+<li>The number of years hosts have been with Airbnb does not follow a specific trend. Moreover, data is distributed along the 0-15 years, with the latter having slightly less representation.</li>
+</ul>
+<p>A very reasonable question to have is if the accommodates affects the price, as one could expect. In <a href="#fig-accommodates-vs-price" class="quarto-xref">Figure&nbsp;3</a> we can see that this is the case.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div id="fig-accommodates-vs-price" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-accommodates-vs-price-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="todo_files/figure-html/fig-accommodates-vs-price-1.png" class="img-fluid figure-img" width="672">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-accommodates-vs-price-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;3: Scatterplot of the Price vs.&nbsp;Accomodates. Regression lines are included to show the tendency of each separate room type.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>We can see that the tendency for prices is to increase more aggressively for entire apartments than for private rooms. Shared rooms, on the other hand, do not increase the price by the number of accommodates, most likely because there may be many beds in a single room, so there is little difference in having more or less accommodates. <a href="#fig-dist-room-type" class="quarto-xref">Figure&nbsp;4</a> shows, moreover, that shared rooms are rare among the listings, dominated by entire apartments.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div id="fig-dist-room-type" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-dist-room-type-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="todo_files/figure-html/fig-dist-room-type-1.png" class="img-fluid figure-img" width="672">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-dist-room-type-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;4: Barplot of the type of listing.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>In fact, we can use a crosstab-heatmap to show just how clustered is the data around the city center, which is why we decided to respect the original proportions of listings per neighborhood. <a href="#fig-crosstab" class="quarto-xref">Figure&nbsp;5</a> contains the result.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div id="fig-crosstab" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-crosstab-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="todo_files/figure-html/fig-crosstab-1.png" class="img-fluid figure-img" width="672">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-crosstab-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;5: A crosstab of the type of listing per type and per neighborhood.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>Note, as well, that more than 33% of the data comes from entire apartments in just the city center of Madrid. Let us be now more specific about the distribution of prices based on the type of listing. <a href="#fig-roomtype-price" class="quarto-xref">Figure&nbsp;6</a> shows it.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div id="fig-roomtype-price" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-roomtype-price-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="todo_files/figure-html/fig-roomtype-price-1.png" class="img-fluid figure-img" width="672">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-roomtype-price-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;6: Boxplot of the prices against the room types.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>In general, entire apartments are more expensive than private rooms, most likely due to the privacy they provide. We can see as well that less clustering is present in the entire apartment class, with several outliers costing more than double or triple the average price. This variance is less pronounced in the private room category.</p>
+<p>Let us explore a different variable now, such as the number of bathrooms. Is there any tendency in the price according to them? Answer can be seen in <a href="#fig-price-bathrooms" class="quarto-xref">Figure&nbsp;7</a>.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div id="fig-price-bathrooms" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-price-bathrooms-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="todo_files/figure-html/fig-price-bathrooms-1.png" class="img-fluid figure-img" width="672">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-price-bathrooms-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;7: Scatterplot of prices vs.&nbsp;the number of bathrooms in the listing.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>We can see that the data is clustered between 1.5 and 2.5 bathrooms, with no clear tendency. Perhaps it is worth taking a look to the distribution of bathrooms based on the number of accommodates of the listing. Take a look at <a href="#fig-bathrooms-accommodates" class="quarto-xref">Figure&nbsp;8</a>.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div id="fig-bathrooms-accommodates" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-bathrooms-accommodates-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="todo_files/figure-html/fig-bathrooms-accommodates-1.png" class="img-fluid figure-img" width="672">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-bathrooms-accommodates-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;8: Scatterplot of bathrooms vs.&nbsp;the maximum number of accommodates in the listing.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>We can see that there is a trend, the number of bathrooms increases with the number of accommodates. Interestingly, we can see some unexpected outliers, such as one apartment in Chamberí with 8 bathrooms for a single accommodate. This is likely an error when inputting the data. We retained this outlier to demonstrate the robustness of PCA later, though we could as well choose to remove it.</p>
+<p>For the sake of completion, we show in <a href="#fig-amenities" class="quarto-xref">Figure&nbsp;9</a> the distribution of the rest of the amenities.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div id="fig-amenities" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-amenities-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="todo_files/figure-html/fig-amenities-1.png" class="img-fluid figure-img" width="672">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-amenities-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;9: Barplots for amenities
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>It is interesting to note that around 40% of the listings do not have a heating system, and 40% as well do not have air conditioning. As well, note than more than half of the listings do not posses an elevator. The high density of listings in the city center could be an explanation for this, since old buildings are less likely to have elevator.</p>
+<p>The last plot of this section, <a href="#fig-ggpairs" class="quarto-xref">Figure&nbsp;10</a>, shows a summary of what we have been presenting.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div id="fig-ggpairs" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-ggpairs-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="todo_files/figure-html/fig-ggpairs-1.png" class="img-fluid figure-img" width="672">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-ggpairs-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;10: Summary of the presented data
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="correlation-analysis" class="level2">
+<h2 class="anchored" data-anchor-id="correlation-analysis">Correlation analysis</h2>
+<p>Let us take a look to a correlation matrix to see if there is any between the variables.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div id="fig-corrplot" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-corrplot-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="todo_files/figure-html/fig-corrplot-1.png" class="img-fluid figure-img" width="672">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-corrplot-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;11: Correlation plot of variables against each other.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>We can see in <a href="#fig-corrplot" class="quarto-xref">Figure&nbsp;11</a> that the price, the number of bathrooms, and the accommodates are highly correlated (the last two we had already seen it in the previous section). We can see as well that the occupation per year rate is correlated to number of reviews, which is to be expected.</p>
+<p>Lastly, we present in <a href="#fig-map" class="quarto-xref">Figure&nbsp;12</a> a detailed map of the occupation per neighborhood, as well as the average and median price for each of them.</p>
+<div id="fig-map" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-map-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="map.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-map-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;12: A heat map of the listing prices in Madrid grouped by neighborhood.
+</figcaption>
+</figure>
+</div>
+<p>Unfortunately, <a href="#fig-map" class="quarto-xref">Figure&nbsp;12</a> is not interactive in its PDF version, which makes the information not as visual as it could be. Nevertheless, we see that the most expensive district, is Moncloa, followed by Centro and then by Salamanca. However, in Moncloa the median is somewhat far from the mean, suggesting there might be some notable outliers that are inflating the average.</p>
+</section>
+<section id="principal-component-analysis" class="level2">
+<h2 class="anchored" data-anchor-id="principal-component-analysis">Principal Component Analysis</h2>
+<p>In the final part of our task, we compute a Principal Component Analysis (PCA) to our dataset. The main goal of the PCA is to reduce the dimensionality of our dataset while being able to maintain its core information.</p>
+<section id="pca-analysis" class="level3">
+<h3 class="anchored" data-anchor-id="pca-analysis">PCA analysis</h3>
+<p>In <a href="#fig-screeplot-eigen" class="quarto-xref">Figure&nbsp;13</a>, we see a Cattell’s scree graph which represents the values of the eigenvalues in relation to their according dimensions, or component number, we select those eigenvalues which follow the Kaiser’s criterion which take those eigenvalues whose values are higher or equal than 1 when computing the covariance matrix.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div id="fig-screeplot-eigen" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-screeplot-eigen-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="todo_files/figure-html/fig-screeplot-eigen-1.png" class="img-fluid figure-img" width="672">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-screeplot-eigen-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;13: Screeplot of eigenvalues.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>We also compute a graph regarding the percentage of explained variability of each component of the PCA. This is presented in <a href="#fig-screeplot-var" class="quarto-xref">Figure&nbsp;14</a>. We can observe that we select three components which account for 57.5% of variability.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div id="fig-screeplot-var" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-screeplot-var-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="todo_files/figure-html/fig-screeplot-var-1.png" class="img-fluid figure-img" width="672">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-screeplot-var-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;14: Screeplot of variance.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="correlation-plots-between-pcs-and-original-variables" class="level3">
+<h3 class="anchored" data-anchor-id="correlation-plots-between-pcs-and-original-variables">Correlation plots between PC’s and original variables</h3>
+<p>In this section we provide correlation plots between the three components with respect to the originals variables in our dataset.</p>
+<section id="correlation-plots-between-pc1-and-pc2" class="level4">
+<h4 class="anchored" data-anchor-id="correlation-plots-between-pc1-and-pc2">Correlation plots between PC1 and PC2</h4>
+<p><a href="#fig-pca-correlation12" class="quarto-xref">Figure&nbsp;15</a> corresponds to the correlation plot between PC1 and PC2 and original variables. We notice two groups of numeric variables that are positively highly correlated, one with PC1 and other with PC2, except two variables; the minimum nights and the host total listing counts.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div id="fig-pca-correlation12" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-pca-correlation12-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="todo_files/figure-html/fig-pca-correlation12-1.png" class="img-fluid figure-img" width="672">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-pca-correlation12-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;15: Correlation plot between PC1 and PC2 and original variables.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="correlation-plots-between-pc1-and-pc3" class="level4">
+<h4 class="anchored" data-anchor-id="correlation-plots-between-pc1-and-pc3">Correlation plots between PC1 and PC3</h4>
+<p><a href="#fig-pca-correlation13" class="quarto-xref">Figure&nbsp;16</a> corresponds to the correlation plot between PC1 and PC3 and original variables. We observe two groups of numeric variables that are positively highly correlated, one with PC1 and other with PC3, except the variable review scores value which has a little negative correlation with PC3.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div id="fig-pca-correlation13" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-pca-correlation13-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="todo_files/figure-html/fig-pca-correlation13-1.png" class="img-fluid figure-img" width="672">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-pca-correlation13-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;16: Correlation plot between PC1 and PC3 and original variables.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="correlation-plots-between-pc2-and-pc3." class="level4">
+<h4 class="anchored" data-anchor-id="correlation-plots-between-pc2-and-pc3.">Correlation plots between PC2 and PC3.</h4>
+<p><a href="#fig-pca-correlation23" class="quarto-xref">Figure&nbsp;17</a> corresponds to the correlation plot between PC2 and PC3 and original variables. We observe that, in this case, the correlation values of the numeric variables are more spread and only one variable which is minimum nights is highly correlated with PC3.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div id="fig-pca-correlation23" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-pca-correlation23-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="todo_files/figure-html/fig-pca-correlation23-1.png" class="img-fluid figure-img" width="672">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-pca-correlation23-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;17: Correlation plot between PC2 and PC3 and original variables.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="contribution-plots" class="level3">
+<h3 class="anchored" data-anchor-id="contribution-plots">Contribution plots</h3>
+<p>Another way we have to observe how much each original numeric variable contributes to each one of our principal components and whether it contributes positively or negatively is the contribution plot.</p>
+<section id="contribution-plot-pc1" class="level4">
+<h4 class="anchored" data-anchor-id="contribution-plot-pc1">Contribution plot PC1</h4>
+<p>In our first plot (<a href="#fig-pca-contribution-1" class="quarto-xref">Figure&nbsp;18</a>) we get to see how each original numeric variable contributes to the PC1. We observe that the ones that contribute the most are accommodates, bedrooms, bathrooms and price which makes sense because more people imply more bedrooms and bathrooms and bigger properties imply more price, so it makes sense that these variables are highly correlated between each other and are part of PC2.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div id="fig-pca-contribution-1" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-pca-contribution-1-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="todo_files/figure-html/fig-pca-contribution-1-1.png" class="img-fluid figure-img" width="672">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-pca-contribution-1-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;18: Contribution plot of original variables to PC1.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="contribution-plot-pc2" class="level4">
+<h4 class="anchored" data-anchor-id="contribution-plot-pc2">Contribution plot PC2</h4>
+<p>In our second (<a href="#fig-pca-contribution-2" class="quarto-xref">Figure&nbsp;19</a>) plot we get to see how each original numeric variable contributes to the PC2. The variables which contribute the most are the number of reviews, the estimated occupancy of each year, the review scores value, the age of the host and the total number of listings that the host has. The numbers of reviews is correlated with the review scores value, the scores values with the estimated occupancy and the age of the host with the total number of listings, so it makes sense that these variables are highly correlated with each other and are part of PC2.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div id="fig-pca-contribution-2" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-pca-contribution-2-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="todo_files/figure-html/fig-pca-contribution-2-1.png" class="img-fluid figure-img" width="672">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-pca-contribution-2-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;19: Contribution plot of original variables to PC2.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="contribution-plot-pc3" class="level4">
+<h4 class="anchored" data-anchor-id="contribution-plot-pc3">Contribution plot PC3</h4>
+<p>In our third plot (<a href="#fig-pca-contribution-3" class="quarto-xref">Figure&nbsp;20</a>) we get to see how each original numeric variable contributes to the PC3. There is one variable that contributes significantly more than any other is the minimum nights variables which contributes more than 50% of the PC3. Recall that in the correlation plot of the PC1 and PC3 and PC2 and PC3, we observed that these variable was the one that had the biggest correlation with PC3 so this makes sense.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div id="fig-pca-contribution-3" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-pca-contribution-3-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="todo_files/figure-html/fig-pca-contribution-3-1.png" class="img-fluid figure-img" width="672">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-pca-contribution-3-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;20: Contribution plot of original variables to PC3.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="correlation-heatmap" class="level4">
+<h4 class="anchored" data-anchor-id="correlation-heatmap">Correlation heatmap</h4>
+<p>Finally we plot a correlation heatmap which allows us to see the level of correlation of the original numeric variables with each one of the principal components. The results, which can be seen in <a href="#fig-heatmap" class="quarto-xref">Figure&nbsp;21</a>, justifies the previous contribution and correlation plots which we have explained before.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div id="fig-heatmap" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-heatmap-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="todo_files/figure-html/fig-heatmap-1.png" class="img-fluid figure-img" width="672">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-heatmap-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;21: Correlation heatmap.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>As an example of an individual plot (<a href="#fig-individual" class="quarto-xref">Figure&nbsp;22</a>), we have our PCA grouped by neighborhoods.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div id="fig-individual" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-individual-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="todo_files/figure-html/fig-individual-1.png" class="img-fluid figure-img" width="672">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-individual-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;22: Individual plot of our PCA grouped by neighborhoods.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="pca-stability-analysis" class="level3">
+<h3 class="anchored" data-anchor-id="pca-stability-analysis">PCA stability analysis</h3>
+<p>In the final part of our project we compute a stability analysis for our PCA by bootstrap. The following graph corresponds to the stability analysis of our eigenvalues. Recall as we saw before that the only principal components which fulfilled Kaiser’s criterion were PC1, PC2 and PC3, in this graph we observe that the criterion is still fulfilled. Our three PCs show to be stable in <a href="#fig-eigenvalues-stability" class="quarto-xref">Figure&nbsp;23</a>.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div id="fig-eigenvalues-stability" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-eigenvalues-stability-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="todo_files/figure-html/fig-eigenvalues-stability-1.png" class="img-fluid figure-img" width="672">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-eigenvalues-stability-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;23: Stability of eigenvalues plot.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>In the final part of our analysis we check the stability of our corresponding principal components. We can see that the original numerical variables exhibit a clear pattern with the principal component which is shown by the low variability and the directional agreement between the bootstrap estimates and the original loadings.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div id="fig-eigenvalues-stability-pc1" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-eigenvalues-stability-pc1-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="todo_files/figure-html/fig-eigenvalues-stability-pc1-1.png" class="img-fluid figure-img" width="672">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-eigenvalues-stability-pc1-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;24: Stability of PC1 loadings plot.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output-display">
+<div id="fig-eigenvalues-stability-pc2" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-eigenvalues-stability-pc2-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="todo_files/figure-html/fig-eigenvalues-stability-pc2-1.png" class="img-fluid figure-img" width="672">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-eigenvalues-stability-pc2-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;25: Stability of PC2 loadings plot.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output-display">
+<div id="fig-eigenvalues-stability-pc3" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-eigenvalues-stability-pc3-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="todo_files/figure-html/fig-eigenvalues-stability-pc3-1.png" class="img-fluid figure-img" width="672">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-eigenvalues-stability-pc3-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;26: Stability of PC3 loadings plot
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+<script src="todo_files/libs/quarto-html/zenscroll-min.js"></script>
+</body></html>
