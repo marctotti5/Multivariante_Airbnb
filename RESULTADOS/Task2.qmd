@@ -1,5 +1,5 @@
 ---
-title: "Multivariate Analysis: First Assignment"
+title: "Multivariate Analysis: Second Assignment"
 author: "Marc Pastor Pou, Juan Ángel Pérez Córcoles, Eduardo Gambín Monserrat"
 date: "`r Sys.Date()`"
 tbl-cap-location: bottom
@@ -20,7 +20,6 @@ format:
     documentclass: scrartcl
     papersize: a4paper
     geometry: margin=25mm
-    monofont: "JetBrains Mono"
     fig-pos: "!htp"
     toc: false
     number-sections: true
@@ -111,7 +110,7 @@ We first look at our heatmap for G-Gower @fig-heatmap-associations_ggower. The f
 heatmap_associations_ggower
 ```
 
-We now look at our heatmap for RelMS @fig-heatmap-associations_relms. The first dimension is similar to the one for GG-power but in this case it gives a higher correlation value to the variable Air Conditioning. The same can be said for the second dimension in which RelMS captures a high correlation for the same variables as G-Gower but in this case it gives a higher correlation value to Elevator. For the next dimensions it captures a bigger amount of correlation between the dimensions and the variables because of its nature to give more specific insights in the data.
+We now look at our heatmap for RelMS @fig-heatmap-associations_relms. The first dimension is similar to the one for G-Gower but in this case it gives a higher correlation value to the variable Air Conditioning. The same can be said for the second dimension in which RelMS captures a high correlation for the same variables as G-Gower but in this case it gives a higher correlation value to Elevator. For the next dimensions it captures a bigger amount of correlation between the dimensions and the variables because of its nature to give more specific insights in the data.
 
 #### Correlation Heatmap for RelMS
 
@@ -167,7 +166,6 @@ create_comparison_plots("heating")
 create_comparison_plots("elevator")
 create_comparison_plots("number_of_reviews")
 ```
-
 
 ### Bootstrap stability analysis
 
@@ -251,7 +249,7 @@ Evaluation of the different configurations.
 Based on these results—and considering that a smaller number of clusters is easier to interpret—we selected the following two configurations for comparison:
 
 1. PCA with $k$-means and Euclidean distance ($k=4$).
-2. MDS with $k$-means and Euclidean distance ($k=8$).
+2. MDS with $k$-means and Euclidean distance ($k=7$).
 
 Since the distance metric and clustering method are equivalent in both selected models, a fairer comparison can be attained.
 
@@ -261,7 +259,7 @@ Since the distance metric and clustering method are equivalent in both selected 
 plot(clustering_comparison)
 ```
 
-Comparison between clustering PCA data against MDS data using $k$-means and the euclidean distance ($k=4$ against $k=8$).
+Comparison between clustering PCA data against MDS data using $k$-means and the euclidean distance ($k=4$ against $k=7$).
 :::
 
 As demonstrated in @fig-clusterings, PCA produces a clearer clustering structure. PCA benefits from using only numerical data, avoiding the complexity of mixed categorical data. However, categorical data may reveal hidden patterns not visible in purely numerical approaches, representing a trade-off between explicability and completeness.
@@ -269,21 +267,9 @@ Plotting the data in three dimensions produces a clearer view on how the data is
 Refer to @fig-pca-3d and @fig-mds-3d for more details on this.
 The improvement is more significant on MDS than PCA.
 
-:::{#fig-pca-3d}
+![PCA 3D](pca.png){#fig-pca-3d}
 
-```{r}
-plot_pca_3d
-```
-
-:::
-
-:::{#fig-mds-3d}
-
-```{r}
-plot_mds_3d
-```
-
-:::
+![MDS 3D](mds.png){#fig-mds-3d}
 
 :::{#tbl-pca}
 
@@ -310,7 +296,7 @@ Using the PCA table as an example, we observe that the $p$-value for each variab
 - Cluster 2 contains hosts with an average of 317 listings (compared to the global median of 7). This suggests the group consists of corporate hosts or property management companies. Interestingly, this group is not distinguished by price, which follows the global trend.
 - Cluster 4 has the highest value and is comprised almost entirely of "Entire homes/apartments".
 
-In the case of MDS, explicability is more challenging due to the higher number of clusters ($k=8$). Nevertheless, the clustering is effective, as indicated by the significant $p$-values. The strongest differentiator between clusters is Room Type:
+In the case of MDS, explicability is more challenging due to the higher number of clusters ($k=7$). Nevertheless, the clustering is effective, as indicated by the significant $p$-values. The strongest differentiator between clusters is Room Type:
 
 - Cluster 1: Exclusively Private Rooms (100%). It is also the cheapest cluster (Median Price: 51 €).
 - Clusters 2, 3, and 7: Almost exclusively Entire Homes/Apartments (>98%), representing the premium segment.
