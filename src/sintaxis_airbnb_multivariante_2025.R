@@ -2858,6 +2858,8 @@ compare_clustering_methods <- function(
   ))
 }
 
+library(fpc)
+
 ## ============== 4. EJECUTAR COMPARACIÓN ==============
 clustering_results <- compare_clustering_methods(
   data_pca = PCA_coordinates,
@@ -2888,7 +2890,8 @@ clustering_results$resumen %>%
     Score
   ) %>%
   arrange(desc(Score)) %>%
-  head(15)
+  head(15) %>%
+  knitr::kable(format = "markdown")
 
 # 🎓 Justificación para el informe:
 # "Se seleccionaron dos configuraciones finales de clustering:
@@ -2972,7 +2975,7 @@ plot_mds_k8 <- ggplot(
   ) +
   scale_color_brewer(palette = "Set2")
 
-grid.arrange(plot_pca_k4, plot_mds_k8, ncol = 2)
+clustering_comparison = grid.arrange(plot_pca_k4, plot_mds_k8, ncol = 2)
 
 
 ## -------- PCA 3D --------
@@ -3135,7 +3138,7 @@ plot_pca_3d_spheres <- plot_ly()
 for (i in 1:4) {
   cluster_data <- PCA_clustered_3d %>%
     filter(Cluster == i) %>%
-    select(PC1, PC2, PC3) %>%
+    dplyr::select(PC1, PC2, PC3) %>%
     as.matrix()
 
   # Solo crear hull si hay suficientes puntos (mínimo 4)
@@ -3224,7 +3227,7 @@ plot_mds_3d_spheres <- plot_ly()
 for (i in 1:8) {
   cluster_data <- MDS_clustered_3d %>%
     filter(Cluster == i) %>%
-    select(MDS1, MDS2, MDS3) %>%
+    dplyr::select(MDS1, MDS2, MDS3) %>%
     as.matrix()
 
   if (nrow(cluster_data) >= 4) {

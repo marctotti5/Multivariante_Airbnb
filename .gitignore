@@ -4,3 +4,5 @@
 .Ruserdata
 RESULTADOS/entrega_1_airbnb_files/
 *.png
+*_files
+*.html
