@@ -64,7 +64,7 @@ vegan,
 biotools,
 fpc
 )
-load("resultados_airbnb.RData")
+load("../BBDD/resultados_airbnb.RData")
 ```
 
 ## Introduction
@@ -79,7 +79,7 @@ In this assignment we compute an MDS based on G-Gower Distance and an MDS config
 
 #### Variance Comparison
 
-The @fig-fig-plot-variance-comparison shows how much variation is captured by a specific dimension for each method. As we can observe for the first two dimensions G-Gower is able to capture more variation while for the rest of dimensions RelMS is able to capture a little bit more variation. This is because G-Gower is able to capture the more "general" view of the patterns in our data while RelMS capture the more "subtle" details that appear in later dimensions.
+The @fig-plot-variance-comparison shows how much variation is captured by a specific dimension for each method. As we can observe for the first two dimensions G-Gower is able to capture more variation while for the rest of dimensions RelMS is able to capture a little bit more variation. This is because G-Gower is able to capture the more "general" view of the patterns in our data while RelMS capture the more "subtle" details that appear in later dimensions.
 
 ```{r}
 #| label: fig-plot-variance-comparison
@@ -161,7 +161,7 @@ As we did in our previous assignment, we compute a bootstrap stability analysis 
 
 #### Eigenvalue stability plot for G-Gower and RelMS
 
-In this figure @fig-fig-plot-eigenvalue-stability we can see the same results as we have seen before. While G-Gower captures more variation for the the first two dimensions, showing its efficiency in "packing" the general parts of the data, RelMS is able to capture more variation in later dimensions which shows its capability in finding meaningful structures in the data.
+In this figure @fig-plot-eigenvalue-stability we can see the same results as we have seen before. While G-Gower captures more variation for the the first two dimensions, showing its efficiency in "packing" the general parts of the data, RelMS is able to capture more variation in later dimensions which shows its capability in finding meaningful structures in the data.
 
 ```{r}
 #| label: fig-plot-eigenvalue-stability
@@ -171,7 +171,7 @@ plot_eigen_stability
 
 ### Coefficient of variation plot for G-Gower and RelMS
 
-This plot @fig-fig-plot-coefficient-of-variation-comparison shows us the reliability of each of the methods. Even though G-Gower captures more variation for the first two dimensions, RelMS is more robust. The increase of the coefficient of variation is due to the fact that as we get further from the more general view of the first dimensions, the dimensions naturally become more unstable.
+This plot @fig-plot-coefficient-of-variation-comparison shows us the reliability of each of the methods. Even though G-Gower captures more variation for the first two dimensions, RelMS is more robust. The increase of the coefficient of variation is due to the fact that as we get further from the more general view of the first dimensions, the dimensions naturally become more unstable.
 
 ```{r}
 #| label: fig-plot-coefficient-of-variation-comparison
@@ -188,7 +188,7 @@ The average silhouette for each tested configuration can be seen in @fig-silhoue
 :::{#fig-silhouette}
 
 ```{r}
-clustering_results$plots$silhouette
+plot(clustering_results$plots$silhouette)
 ```
 
 Comparison of the silhouette of the different configurations.
@@ -203,7 +203,7 @@ MDS produces a compact configuration with the Mahalanobis distance and PAM. This
 :::{#fig-elbow}
 
 ```{r}
-clustering_results$plots$elbow 
+plot(clustering_results$plots$elbow)
 ```
 
 Elbow method plot.
@@ -213,23 +213,23 @@ Elbow method plot.
 
 :::{#tbl-evaluation}
 
-|Space |Method  |Distance  |  k| Silhouette| CH_Index| Dunn_Index|     WSS|     Score|
-|:-----|:-------|:---------|--:|----------:|--------:|----------:|-------:|---------:|
-|PCA   |K-means |Euclidean |  4|     0.2535|   264.88|     0.0217| 4199.12| 0.7181471|
-|MDS   |K-means |Euclidean | 11|     0.2627|   137.29|     0.1152|  301.69| 0.7130728|
-|PCA   |K-means |Euclidean | 11|     0.2583|   247.35|     0.0251| 2156.31| 0.7089065|
-|PCA   |K-means |Euclidean |  5|     0.2588|   257.05|     0.0217| 3712.69| 0.7043294|
-|PCA   |K-means |Euclidean | 10|     0.2523|   253.63|     0.0251| 2283.66| 0.7017821|
-|PCA   |K-means |Euclidean |  3|     0.2397|   264.10|     0.0168| 4934.80| 0.6946470|
-|MDS   |K-means |Euclidean | 12|     0.2587|   133.97|     0.1178|  289.17| 0.6935491|
-|PCA   |K-means |Euclidean |  8|     0.2434|   258.87|     0.0264| 2670.66| 0.6931150|
-|PCA   |K-means |Euclidean |  7|     0.2418|   262.51|     0.0253| 2919.07| 0.6916564|
-|MDS   |K-means |Euclidean |  8|     0.2381|   141.20|     0.1342|  360.89| 0.6870452|
-|MDS   |K-means |Euclidean | 10|     0.2497|   137.83|     0.1127|  319.78| 0.6855834|
-|MDS   |K-means |Euclidean |  7|     0.2298|   146.92|     0.1342|  381.66| 0.6808051|
-|PCA   |K-means |Euclidean |  6|     0.2362|   261.96|     0.0191| 3257.20| 0.6792026|
-|PCA   |K-means |Euclidean |  9|     0.2465|   254.29|     0.0137| 2472.92| 0.6751677|
-|MDS   |K-means |Euclidean |  9|     0.2346|   134.21|     0.1342|  345.82| 0.6649749|
+| Space | Method  | Distance  |   k | Silhouette | CH_Index | Dunn_Index |     WSS |     Score |
+| :---- | :------ | :-------- | --: | ---------: | -------: | ---------: | ------: | --------: |
+| PCA   | K-means | Euclidean |   4 |     0.2535 |   264.88 |     0.0217 | 4199.12 | 0.7181471 |
+| MDS   | K-means | Euclidean |  11 |     0.2627 |   137.29 |     0.1152 |  301.69 | 0.7130728 |
+| PCA   | K-means | Euclidean |  11 |     0.2583 |   247.35 |     0.0251 | 2156.31 | 0.7089065 |
+| PCA   | K-means | Euclidean |   5 |     0.2588 |   257.05 |     0.0217 | 3712.69 | 0.7043294 |
+| PCA   | K-means | Euclidean |  10 |     0.2523 |   253.63 |     0.0251 | 2283.66 | 0.7017821 |
+| PCA   | K-means | Euclidean |   3 |     0.2397 |   264.10 |     0.0168 | 4934.80 | 0.6946470 |
+| MDS   | K-means | Euclidean |  12 |     0.2587 |   133.97 |     0.1178 |  289.17 | 0.6935491 |
+| PCA   | K-means | Euclidean |   8 |     0.2434 |   258.87 |     0.0264 | 2670.66 | 0.6931150 |
+| PCA   | K-means | Euclidean |   7 |     0.2418 |   262.51 |     0.0253 | 2919.07 | 0.6916564 |
+| MDS   | K-means | Euclidean |   8 |     0.2381 |   141.20 |     0.1342 |  360.89 | 0.6870452 |
+| MDS   | K-means | Euclidean |  10 |     0.2497 |   137.83 |     0.1127 |  319.78 | 0.6855834 |
+| MDS   | K-means | Euclidean |   7 |     0.2298 |   146.92 |     0.1342 |  381.66 | 0.6808051 |
+| PCA   | K-means | Euclidean |   6 |     0.2362 |   261.96 |     0.0191 | 3257.20 | 0.6792026 |
+| PCA   | K-means | Euclidean |   9 |     0.2465 |   254.29 |     0.0137 | 2472.92 | 0.6751677 |
+| MDS   | K-means | Euclidean |   9 |     0.2346 |   134.21 |     0.1342 |  345.82 | 0.6649749 |
 
 Evaluation of the different configurations.
 :::
@@ -244,7 +244,7 @@ Since the distance metric and clustering method are equivalent in both selected 
 :::{#fig-clusterings}
 
 ```{r}
-clustering_comparison
+plot(clustering_comparison)
 ```
 
 Comparison between clustering PCA data against MDS data using $k$-means and the euclidean distance ($k=4$ against $k=8$).
@@ -256,18 +256,23 @@ Refer to @fig-pca-3d and @fig-mds-3d for more details on this.
 The improvement is more significant on MDS than PCA.
 
 :::{#fig-pca-3d}
+
 ```{r}
 plot_pca_3d
 ```
+
 :::
 
 :::{#fig-mds-3d}
+
 ```{r}
 plot_mds_3d
 ```
+
 :::
 
 :::{#tbl-pca}
+
 ```{r}
 tabla_clusters_pca
 ```
@@ -286,27 +291,27 @@ Clustering characterization of the MDS data.
 
 We conclude this section by analyzing @tbl-pca and @tbl-mds. The key question is: are the distinct groups meaningful?
 
-Using the PCA table as an example, we observe that the $p$-value for each variable is statistically significant. The test performed here to obtain it uses as null hypothesis that the mean is identical across all groups (the alternative being, of course, that is not). This indicates significant differences between the groups for these variables.
+Using the PCA table as an example, we observe that the $p$-value for each variable is statistically significant. The test performed here to obtain it uses as null hypothesis that the median is identical across all groups (the alternative being, of course, that is not). This indicates significant differences between the groups for these variables.
 
-- Cluster 2 contains hosts with an average of 317 listings (compared to the global mean of 7). This suggests the group consists of corporate hosts or property management companies. Interestingly, this group is not distinguished by price, which follows the global trend.
+- Cluster 2 contains hosts with an average of 317 listings (compared to the global median of 7). This suggests the group consists of corporate hosts or property management companies. Interestingly, this group is not distinguished by price, which follows the global trend.
 - Cluster 4 has the highest value and is comprised almost entirely of "Entire homes/apartments".
 
 In the case of MDS, explicability is more challenging due to the higher number of clusters ($k=8$). Nevertheless, the clustering is effective, as indicated by the significant $p$-values. The strongest differentiator between clusters is Room Type:
 
 - Cluster 1: Exclusively Private Rooms (100%). It is also the cheapest cluster (Median Price: 51 €).
 - Clusters 2, 3, and 7: Almost exclusively Entire Homes/Apartments (>98%), representing the premium segment.
-Clusters 4 and 5: "Mixed" types, suggesting these clusters are grouped by other factors (e.g., location) rather than just privacy.
+  Clusters 4 and 5: "Mixed" types, suggesting these clusters are grouped by other factors (e.g., location) rather than just privacy.
 
 Similar to the PCA results, Cluster 2 in the MDS analysis likely represents companies, as hosts here have a median of 27 listings (significantly higher than the overall median). This cluster also commands the highest price (154 €).
 
 ## Conclusions
 
-MDS is a powerful technique when dealing with mixed-type data (numerical and categorical). While PCA is a well-known and widely applied technique, it lacks the flexibility to incorporate categorical variables directly. 
+MDS is a powerful technique when dealing with mixed-type data (numerical and categorical). While PCA is a well-known and widely applied technique, it lacks the flexibility to incorporate categorical variables directly.
 
-However, MDS is often more difficult to explain due to a lack of direct variable association. In PCA, the principal components are linear combinations of the original variables (e.g., "size" or "price"), whereas in MDS, the dimensions represent relative distances, and there is no strict rule of thumb for interpretation. 
+However, MDS is often more difficult to explain due to a lack of direct variable association. In PCA, the principal components are linear combinations of the original variables (e.g., "size" or "price"), whereas in MDS, the dimensions represent relative distances, and there is no strict rule of thumb for interpretation.
 
-Moreover, the dimensionality differs: PCA results in as many components as there are variables (columns), whereas MDS can theoretically produce as many dimensions as there are observations minus one (rows), though we typically select a low-dimensional representation. 
+Moreover, the dimensionality differs: PCA results in as many components as there are variables (columns), whereas MDS can theoretically produce as many dimensions as there are observations minus one (rows), though we typically select a low-dimensional representation.
 
-Ultimately, the choice is a balance between efficiency and generality. 
+Ultimately, the choice is a balance between efficiency and generality.
 
 Clustering proves to be a powerful tool for revealing hidden patterns, as seen with the Airbnb listings. The results are significantly dependent on both the chosen distance metric and the clustering technique (recalling that the hierarchical approach was discarded due to poor performance). Additionally, clustering benefits from lower dimensionality, as fewer broad groups are often easier to interpret and operationalize than multiple small, fragmented clusters.
