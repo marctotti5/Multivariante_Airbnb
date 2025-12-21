@@ -96,7 +96,6 @@ window.Quarto = {
   <li><a href="#comparison-plots-for-categorical-variables" id="toc-comparison-plots-for-categorical-variables" class="nav-link" data-scroll-target="#comparison-plots-for-categorical-variables">Comparison plots for categorical variables</a></li>
   <li><a href="#bootstrap-stability-analysis" id="toc-bootstrap-stability-analysis" class="nav-link" data-scroll-target="#bootstrap-stability-analysis">Bootstrap stability analysis</a></li>
   <li><a href="#coefficient-of-variation-plot-for-g-gower-and-relms" id="toc-coefficient-of-variation-plot-for-g-gower-and-relms" class="nav-link" data-scroll-target="#coefficient-of-variation-plot-for-g-gower-and-relms">Coefficient of variation plot for G-Gower and RelMS</a></li>
-  <li><a href="#other-comparisons" id="toc-other-comparisons" class="nav-link" data-scroll-target="#other-comparisons">Other comparisons</a></li>
   </ul></li>
   <li><a href="#clustering" id="toc-clustering" class="nav-link" data-scroll-target="#clustering">Clustering</a></li>
   <li><a href="#conclusions" id="toc-conclusions" class="nav-link" data-scroll-target="#conclusions">Conclusions</a></li>
@@ -281,49 +280,8 @@ Figure&nbsp;7: Comparison plot for neighborhood group(dimensions 1 and 5).
 </div>
 </div>
 </section>
-</section>
-<section id="bootstrap-stability-analysis" class="level3">
-<h3 class="anchored" data-anchor-id="bootstrap-stability-analysis">Bootstrap stability analysis</h3>
-<p>As we did in our previous assignment, we compute a bootstrap stability analysis for our MDS methods.</p>
-<section id="eigenvalue-stability-plot-for-g-gower-and-relms" class="level4">
-<h4 class="anchored" data-anchor-id="eigenvalue-stability-plot-for-g-gower-and-relms">Eigenvalue stability plot for G-Gower and RelMS</h4>
-<p>In this figure <a href="#fig-plot-eigenvalue-stability" class="quarto-xref">Figure&nbsp;8</a> we can see the same results as we have seen before. While G-Gower captures more variation for the the first two dimensions, showing its efficiency in “packing” the general parts of the data, RelMS is able to capture more variation in later dimensions which shows its capability in finding meaningful structures in the data.</p>
-<div class="cell">
-<div class="cell-output-display">
-<div id="fig-plot-eigenvalue-stability" class="quarto-float quarto-figure quarto-figure-center anchored">
-<figure class="quarto-float quarto-float-fig figure">
-<div aria-describedby="fig-plot-eigenvalue-stability-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<img src="Task2_files/figure-html/fig-plot-eigenvalue-stability-1.png" class="img-fluid figure-img" width="672">
-</div>
-<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-plot-eigenvalue-stability-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Figure&nbsp;8: Eigenvalue stability plot for G-Gower and RelMS.
-</figcaption>
-</figure>
-</div>
-</div>
-</div>
-</section>
-</section>
-<section id="coefficient-of-variation-plot-for-g-gower-and-relms" class="level3">
-<h3 class="anchored" data-anchor-id="coefficient-of-variation-plot-for-g-gower-and-relms">Coefficient of variation plot for G-Gower and RelMS</h3>
-<p>This plot <a href="#fig-plot-coefficient-of-variation-comparison" class="quarto-xref">Figure&nbsp;9</a> shows us the reliability of each of the methods. Even though G-Gower captures more variation for the first two dimensions, RelMS is more robust. The increase of the coefficient of variation is due to the fact that as we get further from the more general view of the first dimensions, the dimensions naturally become more unstable.</p>
-<div class="cell">
-<div class="cell-output-display">
-<div id="fig-plot-coefficient-of-variation-comparison" class="quarto-float quarto-figure quarto-figure-center anchored">
-<figure class="quarto-float quarto-float-fig figure">
-<div aria-describedby="fig-plot-coefficient-of-variation-comparison-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<img src="Task2_files/figure-html/fig-plot-coefficient-of-variation-comparison-1.png" class="img-fluid figure-img" width="672">
-</div>
-<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-plot-coefficient-of-variation-comparison-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Figure&nbsp;9: Eigenvalue stability plot for G-Gower and RelMS.
-</figcaption>
-</figure>
-</div>
-</div>
-</div>
-</section>
-<section id="other-comparisons" class="level3">
-<h3 class="anchored" data-anchor-id="other-comparisons">Other comparisons</h3>
+<section id="other-comparisons" class="level4">
+<h4 class="anchored" data-anchor-id="other-comparisons">Other comparisons</h4>
 <div class="cell">
 <div class="cell-output-display">
 <div>
@@ -371,6 +329,47 @@ Figure&nbsp;9: Eigenvalue stability plot for G-Gower and RelMS.
 <div>
 <figure class="figure">
 <p><img src="Task2_files/figure-html/unnamed-chunk-2-7.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="bootstrap-stability-analysis" class="level3">
+<h3 class="anchored" data-anchor-id="bootstrap-stability-analysis">Bootstrap stability analysis</h3>
+<p>As we did in our previous assignment, we compute a bootstrap stability analysis for our MDS methods.</p>
+<section id="eigenvalue-stability-plot-for-g-gower-and-relms" class="level4">
+<h4 class="anchored" data-anchor-id="eigenvalue-stability-plot-for-g-gower-and-relms">Eigenvalue stability plot for G-Gower and RelMS</h4>
+<p>In this figure <a href="#fig-plot-eigenvalue-stability" class="quarto-xref">Figure&nbsp;8</a> we can see the same results as we have seen before. While G-Gower captures more variation for the the first two dimensions, showing its efficiency in “packing” the general parts of the data, RelMS is able to capture more variation in later dimensions which shows its capability in finding meaningful structures in the data.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div id="fig-plot-eigenvalue-stability" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-plot-eigenvalue-stability-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="Task2_files/figure-html/fig-plot-eigenvalue-stability-1.png" class="img-fluid figure-img" width="672">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-plot-eigenvalue-stability-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;8: Eigenvalue stability plot for G-Gower and RelMS.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="coefficient-of-variation-plot-for-g-gower-and-relms" class="level3">
+<h3 class="anchored" data-anchor-id="coefficient-of-variation-plot-for-g-gower-and-relms">Coefficient of variation plot for G-Gower and RelMS</h3>
+<p>This plot <a href="#fig-plot-coefficient-of-variation-comparison" class="quarto-xref">Figure&nbsp;9</a> shows us the reliability of each of the methods. Even though G-Gower captures more variation for the first two dimensions, RelMS is more robust. The increase of the coefficient of variation is due to the fact that as we get further from the more general view of the first dimensions, the dimensions naturally become more unstable.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div id="fig-plot-coefficient-of-variation-comparison" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-plot-coefficient-of-variation-comparison-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="Task2_files/figure-html/fig-plot-coefficient-of-variation-comparison-1.png" class="img-fluid figure-img" width="672">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-plot-coefficient-of-variation-comparison-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;9: Eigenvalue stability plot for G-Gower and RelMS.
+</figcaption>
 </figure>
 </div>
 </div>

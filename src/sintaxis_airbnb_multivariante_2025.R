@@ -1509,7 +1509,7 @@ create_comparison_plots("review_scores_value")
 
 ## ============== 3. ESTABILIDAD (BOOTSTRAP) ==============
 set.seed(123)
-n_bootstrap <- 10
+n_bootstrap <- 100
 n_obs <- nrow(data_airbnb_sample)
 
 # Matrices para guardar coordenadas bootstrap
@@ -1533,7 +1533,7 @@ for (i in 1:n_bootstrap) {
 
   # Recalcular distancias robustas G-Gower
   D_ggower_boot_sq <- robust_distances(
-    data = select(data_boot, -id),
+    data = dplyr::select(data_boot, -id),
     cont_vars = numeric_variables_MDS,
     bin_vars = binary_variables_MDS,
     cat_vars = categorical_variables_MDS,
@@ -1547,7 +1547,7 @@ for (i in 1:n_bootstrap) {
 
   # Recalcular distancias robustas RELMS
   D_relms_boot_sq <- robust_distances(
-    data = select(data_boot, -id),
+    data = dplyr::select(data_boot, -id),
     cont_vars = numeric_variables_MDS,
     bin_vars = binary_variables_MDS,
     cat_vars = categorical_variables_MDS,

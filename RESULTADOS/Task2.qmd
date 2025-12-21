@@ -155,6 +155,20 @@ This plot @fig-plot-comparison-neighborhood-group-d1-d5, has the same purpose as
 create_comparison_plots("neighbourhood_group_cleansed", dim_x = 1, dim_y = 5)
 ```
 
+#### Other comparisons
+
+```{r}
+create_comparison_plots("accommodates")
+create_comparison_plots("host_total_listings_count")
+create_comparison_plots("price")
+
+create_comparison_plots("air_conditioning")
+create_comparison_plots("heating")
+create_comparison_plots("elevator")
+create_comparison_plots("number_of_reviews")
+```
+
+
 ### Bootstrap stability analysis
 
 As we did in our previous assignment, we compute a bootstrap stability analysis for our MDS methods.
@@ -178,20 +192,6 @@ This plot @fig-plot-coefficient-of-variation-comparison shows us the reliability
 #| fig-cap: "Eigenvalue stability plot for G-Gower and RelMS."
 plot_cv_comparison
 ```
-
-### Other comparisons
-
-```{r}
-create_comparison_plots("accommodates")
-create_comparison_plots("host_total_listings_count")
-create_comparison_plots("price")
-
-create_comparison_plots("air_conditioning")
-create_comparison_plots("heating")
-create_comparison_plots("elevator")
-create_comparison_plots("number_of_reviews")
-```
-
 
 ## Clustering
 
