@@ -42,6 +42,7 @@ knitr::opts_chunk$set(
 
 ```{r}
 pacman::p_load(
+kableExtra,
 tidyverse,
 DataExplorer,
 labelled,
@@ -274,7 +275,9 @@ The improvement is more significant on MDS than PCA.
 :::{#tbl-pca}
 
 ```{r}
-tabla_clusters_pca
+tabla_clusters_pca %>%
+  gt::tab_options(table.width = gt::pct(90)) %>% # Force width to 100% of page
+  gt::as_latex() # Ensure it outputs latex
 ```
 
 Clustering characterization of the PCA data.
@@ -283,7 +286,9 @@ Clustering characterization of the PCA data.
 :::{#tbl-mds}
 
 ```{r}
-tabla_clusters_mds
+tabla_clusters_mds %>%
+  gt::tab_options(table.width = gt::pct(90)) %>% # Force width to 100% of page
+  gt::as_latex() # Ensure it outputs latex
 ```
 
 Clustering characterization of the MDS data.
