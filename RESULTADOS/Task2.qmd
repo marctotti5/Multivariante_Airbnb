@@ -179,6 +179,20 @@ This plot @fig-plot-coefficient-of-variation-comparison shows us the reliability
 plot_cv_comparison
 ```
 
+### Other comparisons
+
+```{r}
+create_comparison_plots("accommodates")
+create_comparison_plots("host_total_listings_count")
+create_comparison_plots("price")
+
+create_comparison_plots("air_conditioning")
+create_comparison_plots("heating")
+create_comparison_plots("elevator")
+create_comparison_plots("number_of_reviews")
+```
+
+
 ## Clustering
 
 After evaluating the available methods with the data, we chose not to use any of the hierarchical methods due to their poor performance. Instead, we compared PCA versus MDS using only non-hierarchical methods to evaluate their ability to cluster the data.
